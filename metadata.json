@@ -1,0 +1,6 @@
+{
+  "name": "Sapahati",
+  "description": "Platform teman bicara, curhat AI, dan konsultasi psikolog profesional",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
