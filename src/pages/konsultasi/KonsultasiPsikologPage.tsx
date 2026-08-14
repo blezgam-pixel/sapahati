@@ -231,9 +231,9 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
       
       // Use redirect instead of popup to fix in-app browser and Safari mobile issues
       await signInWithRedirect(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login failed', error);
-      alert('Login dibatalkan atau gagal.');
+      alert('Login gagal. Jika kamu menggunakan Vercel, pastikan domain "sapahati.vercel.app" sudah ditambahkan ke daftar "Authorized Domains" di menu Authentication Firebase Console kamu. (' + error.message + ')');
     }
   };
 

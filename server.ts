@@ -290,7 +290,7 @@ ${prompt}`;
     let stream;
     try {
       stream = await ai.models.generateContentStream({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.6-flash',
         contents: [
           {
             role: 'user',
@@ -298,17 +298,21 @@ ${prompt}`;
           }
         ]
       });
-    } catch (modelErr) {
-      console.warn('Primary model gemini-2.5-flash failed, trying fallback model gemini-1.5-flash...', modelErr);
-      stream = await ai.models.generateContentStream({
-        model: 'gemini-1.5-flash',
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: systemPrompt }]
-          }
-        ]
-      });
+    } catch (modelErr: any) {
+      console.warn('Primary model gemini-3.6-flash failed:', modelErr.message);
+      try {
+        stream = await ai.models.generateContentStream({
+          model: 'gemini-3.1-flash-lite',
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: systemPrompt }]
+            }
+          ]
+        });
+      } catch (liteErr: any) {
+        console.warn('Fallback gemini-3.1-flash-lite failed:', liteErr.message);
+      }
     }
 
     for await (const chunk of stream) {
