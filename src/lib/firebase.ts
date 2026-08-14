@@ -1,9 +1,11 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
 const firebaseConfig = {
   apiKey: "AIzaSyAHKJbF6-S76TFYCZTMZkd0GMa0JJeReeY",
-  authDomain: "sapahati-app.firebaseapp.com",
+  authDomain: isLocalhost ? "sapahati-app.firebaseapp.com" : "sapahati.vercel.app",
   projectId: "sapahati-app",
   storageBucket: "sapahati-app.firebasestorage.app",
   messagingSenderId: "113416393039",
