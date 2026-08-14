@@ -9,6 +9,7 @@ import {
   getSyncState,
 } from '../services/googleSheets';
 import { importCmsConfigRows } from './cmsStore';
+import { auth } from '../lib/firebase';
 
 export const INITIAL_PSYCHOLOGISTS: Psychologist[] = [];
 
@@ -109,11 +110,17 @@ export async function createBooking(booking: Omit<BookingSession, 'id' | 'status
   const state = getSyncState();
   if (state.status === 'connected' && state.spreadsheetId) {
     try {
+      // Ambil token Firebase untuk otorisasi server
+      const currentUser = auth.currentUser;
+      const idToken = currentUser ? await currentUser.getIdToken() : null;
+
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
       // Use atomic server-side append: 1 baris baru ditulis langsung ke Sheets
-      // Ini aman untuk request paralel karena values.append di Google Sheets API bersifat atomik
       await fetch('/api/sheets/bookings/append', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ booking: created }),
       });
     } catch (err) {

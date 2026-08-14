@@ -21,6 +21,48 @@ const app = express();
 
 app.use(express.json({ limit: '10mb' }));
 
+// ============================================================
+// 🔒 KEAMANAN: Rate Limiter (Gratis, tanpa paket tambahan)
+// ============================================================
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(ip: string, maxAttempts = 5, windowMs = 15 * 60 * 1000): { allowed: boolean; remaining: number; resetIn: number } {
+  const now = Date.now();
+  const entry = rateLimitStore.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitStore.set(ip, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, remaining: maxAttempts - 1, resetIn: windowMs };
+  }
+  if (entry.count >= maxAttempts) {
+    return { allowed: false, remaining: 0, resetIn: entry.resetAt - now };
+  }
+  entry.count++;
+  return { allowed: true, remaining: maxAttempts - entry.count, resetIn: entry.resetAt - now };
+}
+
+// ============================================================
+// 🔒 KEAMANAN: Verifikasi Token Firebase (Gratis, pakai REST API)
+// ============================================================
+const FIREBASE_API_KEY = 'AIzaSyAHKJbF6-S76TFYCZTMZkd0GMa0JJeReeY';
+
+async function verifyFirebaseToken(idToken: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data.users?.[0]?.localId as string) || null;
+  } catch {
+    return null;
+  }
+}
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', app: 'Sapahati' });
@@ -82,10 +124,24 @@ app.post('/api/sheets/bookings', async (req, res) => {
 // Atomic append: langsung tulis 1 baris baru ke Sheets tanpa baca semua dulu
 // values.append di Google Sheets API bersifat atomik - aman untuk request paralel
 app.post('/api/sheets/bookings/append', async (req, res) => {
+  // 🔒 Verifikasi token Firebase
+  const authHeader = req.headers.authorization;
+  const idToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!idToken) {
+    return res.status(401).json({ error: 'Akses ditolak. Silakan login terlebih dahulu.' });
+  }
+  const uid = await verifyFirebaseToken(idToken);
+  if (!uid) {
+    return res.status(401).json({ error: 'Token tidak valid atau sudah kedaluwarsa. Silakan login ulang.' });
+  }
+
   try {
     const { booking } = req.body;
     if (!booking || !booking.id) {
       return res.status(400).json({ error: 'Data booking tidak valid' });
+    }
+    if (booking.userId && booking.userId !== uid) {
+      return res.status(403).json({ error: 'Data booking tidak sesuai dengan akun yang login.' });
     }
     await appendBookingToSheet(booking);
     res.json({ success: true });
@@ -162,6 +218,17 @@ app.post('/api/sheets/admins', async (req, res) => {
 });
 
 app.post('/api/admin/login', async (req, res) => {
+  // 🔒 Rate limiting: max 5 percobaan per 15 menit per IP
+  const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown';
+  const limit = checkRateLimit(clientIp, 5, 15 * 60 * 1000);
+  if (!limit.allowed) {
+    const minutesLeft = Math.ceil(limit.resetIn / 60000);
+    return res.status(429).json({
+      success: false,
+      message: `Terlalu banyak percobaan login. Coba lagi dalam ${minutesLeft} menit.`
+    });
+  }
+
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -264,12 +331,13 @@ app.post('/api/curhat', async (req, res) => {
     let systemRole = '';
 
     if (personaType === 'sarcastic') {
-      systemRole = `PERSONALITAS: Kamu adalah "Sesi Curhat" — AI cerdas, blak-blakan, agak sarkas tapi peduli. Berikan "tough love" (nasihat pedas tapi sayang). Kamu tidak terlalu suka basa-basi manis.`;
-      turnInstruction = `ATURAN KHUSUS (SARKAS TAPI PEDULI):
-1. Gaya bahasa Indonesia santai, blak-blakan, agak pedas tapi logis. Jangan terlalu manis.
-2. Beri solusi praktis yang menampar agar pengguna sadar.
-3. JANGAN mengulang-ulang pembuka "Wajar banget". Kasih tanggapan to the point.
-4. Panjang respons: 2-3 kalimat.`;
+      systemRole = 'Kamu adalah Sesi Curhat bergaya Anak Jaksel yang nyinyir, sangat sarkas, savage, logis, dan realistik (menampar dengan fakta).';
+      turnInstruction = `ATURAN UTAMA KEPRIBADIAN (SARKASME LEVEL TINGGI & BAHASA JAKSEL):
+1. PERSONALITAS: Sangat blak-blakan, nyinyir, plenger, sarkas (bikin sadar realita dengan pedas), kasih "tough love" yang bener-bener nonjok. Jangan kasihan atau lembek.
+2. FORMAT TEKS: DILARANG KERAS menggunakan tanda bintang (*) atau italic formatting. Tulis teks polos biasa saja tanpa format miring.
+3. GAYA BAHASA: Pake bahasa gaul Anak Jaksel campuran Inggris-Indo (contoh: "literally", "which is", "at the end of the day", "make sense", "jujurly", "like...", "gue-lu").
+4. CONTOH NYENTIL: "Ya lagian lu expect apa? Nunggu keajaiban?", "Jujurly otak lu dipake gak sih mikir gitu?", "Stop playing victim deh, gak ada yang peduli juga.".
+5. PANJANG RESPONS: 2-3 kalimat yang padat, savage, ngena, tapi logis. (Ini respons ke-${currentTurn} dari 5).`;
     } else {
       systemRole = `PERSONALITAS: Kamu adalah "Sesi Curhat" — bestie paling peka, ramah, super empati, humble, dan tempat aman buat cerita tanpa di-judge sama sekali.`;
       turnInstruction = `ATURAN UTAMA KEPRIBADIAN & GAYA BAHASA (ALA GEN Z BESTIE HANGAT):
@@ -280,11 +348,22 @@ app.post('/api/curhat', async (req, res) => {
     }
 
     if (currentTurn >= 5) {
-      turnInstruction = `Ini pesan ke-5 (SESI TERAKHIR). Apresiasi keberaniannya cerita, sampaikan secara lembut kalau sesi AI 5 pertanyaan ini udah selesai, lalu ajak ngobrol bareng Psikolog Profesional biar dapet pendampingan yang lebih dalam!`;
+      if (personaType === 'sarcastic') {
+        turnInstruction = `Ini pesan ke-5 (SESI TERAKHIR dari 5 pertanyaan). Jawab dengan gaya super sarkas Jaksel (DILARANG PAKAI TANDA BINTANG): "Udah ya, jatah 5 pertanyaan lu udah abis, capek gue nanggapin drama lu. Literally mending lu lanjut curhat ke Psikolog Profesional di aplikasi Sapa Hati ini aja deh biar lu dikasih solusi beneran. At the end of the day, lu butuh bantuan nyata, bukan cuma ngeluh doang. Semangat jalanin idup! ☕"`;
+      } else {
+        turnInstruction = `Ini pesan ke-5 (SESI TERAKHIR). Apresiasi keberaniannya cerita, sampaikan secara lembut kalau sesi AI 5 pertanyaan ini udah selesai, lalu ajak ngobrol bareng Psikolog Profesional biar dapet pendampingan yang lebih dalam!`;
+      }
     }
+
+    const safetyInstruction = `ATURAN REKOMENDASI PENTING:
+1. JANGAN PERNAH menyebut atau merekomendasikan aplikasi kompetitor (seperti Halodoc, Riliv, Alodokter, dll) atau Halo Jiwa.
+2. JANGAN langsung merekomendasikan psikolog atau aplikasi Sapa Hati di awal obrolan KECUALI ini adalah sesi terakhir (pertanyaan ke-5) ATAU pengguna yang memintanya secara eksplisit. Biarkan obrolan mengalir natural dulu.
+3. Kejahatan/Kekerasan: Jika ada indikasi kriminalitas, pelecehan, kekerasan fisik/seksual, wajib arahkan lapor ke polisi (Call Center Polri 110).`;
 
     const systemPrompt = `${systemRole}
 Kamu SELALU INGAT konteks percakapan sebelumnya.
+
+${safetyInstruction}
 
 ${turnInstruction}
 
