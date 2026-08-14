@@ -288,7 +288,7 @@ export const PsikologModal: React.FC<PsikologModalProps> = ({ isOpen, onClose })
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  const handleSubmitBooking = (e: React.FormEvent) => {
+  const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPsikolog || !patientName.trim() || !patientAge || !patientWhatsapp.trim()) return;
 
@@ -298,12 +298,8 @@ export const PsikologModal: React.FC<PsikologModalProps> = ({ isOpen, onClose })
     }
 
     setIsSubmitting(true);
-
-    const price = selectedPsikolog.prices[selectedMethod];
-    const methodTitle = METHODS_CONFIG.find((m) => m.id === selectedMethod)?.title || 'Konsultasi';
-
-    setTimeout(() => {
-      const created = createBooking({
+    try {
+      const created = await createBooking({
         patientName,
         patientAge: Number(patientAge),
         patientWhatsapp,
@@ -316,11 +312,14 @@ export const PsikologModal: React.FC<PsikologModalProps> = ({ isOpen, onClose })
         paymentReceiptName: receiptFileName || 'Bukti_Transfer_QRIS.jpg',
         paymentReceiptUrl: receiptDataUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=300&auto=format&fit=crop&q=80',
       });
-
       setCreatedBookingId(created.id);
-      setIsSubmitting(false);
       setStep(2);
-    }, 1200);
+    } catch (err) {
+      console.error('Failed to create booking', err);
+      alert('Gagal membuat pesanan. Silakan coba lagi.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {

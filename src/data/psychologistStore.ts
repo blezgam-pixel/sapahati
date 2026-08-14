@@ -92,20 +92,38 @@ export function getBookings(): BookingSession[] {
   }
 }
 
-export function createBooking(booking: Omit<BookingSession, 'id' | 'status' | 'createdAt'>): BookingSession {
-  const current = getBookings();
+export async function createBooking(booking: Omit<BookingSession, 'id' | 'status' | 'createdAt'>): Promise<BookingSession> {
   const created: BookingSession = {
     ...booking,
     id: 'book_' + Date.now(),
     status: 'pending',
     createdAt: new Date().toISOString(),
   };
-  const updated = [created, ...current];
-  localStorage.setItem(BOOKINGS_KEY, JSON.stringify(updated));
-  notifyListeners();
 
-  // Sync to Google Sheets
-  pushBookingsToSheets(updated);
+  const state = getSyncState();
+
+  if (state.status === 'connected' && state.spreadsheetId) {
+    // Fetch the LATEST bookings from the server first to prevent race conditions
+    // (multiple users booking at the same time from different devices)
+    const remoteBookings = await fetchBookingsFromSheets();
+    
+    // Merge: put new booking first, then all remote bookings that don't duplicate this id
+    const merged = [created, ...remoteBookings.filter(b => b.id !== created.id)];
+    
+    // Update localStorage with merged data
+    localStorage.setItem(BOOKINGS_KEY, JSON.stringify(merged));
+    notifyListeners();
+    
+    // Push merged list back to Sheets
+    await pushBookingsToSheets(merged);
+  } else {
+    // Offline mode: just save locally
+    const current = getBookings();
+    const updated = [created, ...current];
+    localStorage.setItem(BOOKINGS_KEY, JSON.stringify(updated));
+    notifyListeners();
+  }
+
   return created;
 }
 

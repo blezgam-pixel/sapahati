@@ -436,7 +436,7 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
     const methodTitle = METHODS_CONFIG.find((m) => m.id === selectedMethod)?.title || 'Konsultasi';
 
     try {
-      const created = createBooking({
+      const created = await createBooking({
         patientName,
         patientAge: Number(patientAge),
         patientWhatsapp,
