@@ -19,18 +19,12 @@ export const TestimonialsSection: React.FC = () => {
   const testimonialsConfig = cms.testimonials;
   const testimonials = testimonialsConfig.items && testimonialsConfig.items.length > 0
     ? testimonialsConfig.items
-    : [
-        {
-          id: 't1',
-          name: 'Anisa R.',
-          role: 'Mahasiswi (22 th)',
-          avatarBg: 'bg-purple-600 text-white',
-          rating: 5,
-          service: 'Sesi Curhat & Chat',
-          comment: 'Awalnya cemas banget pas lagi burnout tugas akhir. Sesi Curhat langsung responsif 24 jam tanpa menghakimi, lalu lanjut sesi chat dengan Psikolog. Lega banget bisa rilis beban emosi!',
-          date: '3 hari yang lalu',
-        },
-      ];
+    : [];
+
+  // Jika tidak ada data testimonial dari Spreadsheet, sembunyikan section
+  if (testimonials.length === 0) {
+    return null;
+  }
 
   const filteredTestimonials = filter === 'ALL' 
     ? testimonials 

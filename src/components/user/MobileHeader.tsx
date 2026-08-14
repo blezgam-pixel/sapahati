@@ -25,22 +25,30 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ onGoHome }) => {
         className="flex items-center gap-2.5 cursor-pointer select-none"
       >
         {/* Brand Logo Image from Spreadsheet / CMS */}
+        {branding.logoImage && (
         <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
           <TransparentImage 
             src={branding.logoImage} 
-            alt={`${branding.brandName} Logo`} 
+            alt={`${branding.brandName || 'App'} Logo`} 
             className="w-full h-full object-contain"
           />
         </div>
+        )}
         
+        {(branding.brandName || branding.brandSubtitle) && (
         <div className="flex flex-col">
+          {branding.brandName && (
           <span className="text-sm font-extrabold text-[#1D123B] tracking-tight leading-none">
             {branding.brandName}
           </span>
+          )}
+          {branding.brandSubtitle && (
           <span className="text-[7.5px] font-bold tracking-widest text-[#6C47FF] mt-0.5 uppercase">
             {branding.brandSubtitle}
           </span>
+          )}
         </div>
+        )}
       </div>
     </div>
   );

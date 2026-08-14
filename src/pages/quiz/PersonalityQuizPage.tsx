@@ -7,7 +7,7 @@ import { MobileBottomNav } from '../../components/user/MobileBottomNav';
 import { NavigationDrawer } from '../../components/user/NavigationDrawer';
 import { PsikologModal } from '../../components/psychologist/PsikologModal';
 import { CurhatAiModal } from '../../components/user/CurhatAiModal';
-import { APP_IMAGES } from '../../data/appImages';
+import { useCmsConfig } from '../../data/cmsStore';
 
 interface PersonalityQuizPageProps {
   onBackToHome: () => void;
@@ -31,6 +31,7 @@ export const PersonalityQuizPage: React.FC<PersonalityQuizPageProps> = ({
   const [isPsikologOpen, setIsPsikologOpen] = useState(false);
   const [isCurhatAiOpen, setIsCurhatAiOpen] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
+  const config = useCmsConfig();
 
   const handleOpenPsikolog = onOpenPsikolog || (() => setIsPsikologOpen(true));
 
@@ -97,7 +98,7 @@ export const PersonalityQuizPage: React.FC<PersonalityQuizPageProps> = ({
         isOpen={isCurhatAiOpen}
         onClose={() => setIsCurhatAiOpen(false)}
         onOpenPsikolog={handleOpenPsikolog}
-        botAvatar={APP_IMAGES.botAvatar}
+        botAvatar={config.branding.botAvatar}
       />
     </div>
   );

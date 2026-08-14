@@ -12,6 +12,11 @@ export const MotivationalPsychologistsSection: React.FC = () => {
 
   const mp = cms.motivationalPsychologists;
 
+  // Jika tidak ada data psikolog dari Spreadsheet, sembunyikan section
+  if (!mp.leftName && !mp.rightName && !mp.leftQuote && !mp.rightQuote) {
+    return null;
+  }
+
   return (
     <div className="w-full bg-gradient-to-r from-purple-50/80 via-white to-indigo-50/80 border border-purple-100/90 rounded-3xl p-5 sm:p-8 shadow-2xs relative overflow-hidden text-left my-2">
       {/* Decorative ambient background blur */}

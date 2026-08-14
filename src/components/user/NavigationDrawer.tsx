@@ -47,10 +47,14 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         <div>
           <div className="flex items-center justify-between pb-5 border-b border-purple-100">
             <div className="flex items-center gap-2.5">
+              {branding.logoImage && (
               <div className="w-9 h-9 flex items-center justify-center shrink-0">
-                <TransparentImage src={branding.logoImage} alt={`${branding.brandName} Logo`} className="w-full h-full object-contain" />
+                <TransparentImage src={branding.logoImage} alt={`${branding.brandName || 'App'} Logo`} className="w-full h-full object-contain" />
               </div>
+              )}
+              {branding.brandName && (
               <span className="text-xl font-extrabold text-[#1D123B]">{branding.brandName}</span>
+              )}
             </div>
             <button
               onClick={onClose}

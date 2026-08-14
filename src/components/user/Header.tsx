@@ -48,21 +48,29 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center gap-2.5 sm:gap-3 group cursor-pointer select-none shrink-0"
           onClick={handleHomeClick}
         >
+          {branding.logoImage && (
           <div className="relative w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center transition-transform group-hover:scale-105 shrink-0">
             <TransparentImage 
               src={branding.logoImage} 
-              alt={`${branding.brandName} Logo`} 
+              alt={`${branding.brandName || 'App'} Logo`} 
               className="w-full h-full object-contain"
             />
           </div>
+          )}
+          {(branding.brandName || branding.brandSubtitle) && (
           <div className="flex flex-col">
+            {branding.brandName && (
             <span className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-[#1D123B] group-hover:text-[#6C47FF] transition-colors leading-none">
               {branding.brandName}
             </span>
+            )}
+            {branding.brandSubtitle && (
             <span className="text-[10px] sm:text-xs text-purple-600 font-medium tracking-wide hidden sm:block">
               {branding.brandSubtitle}
             </span>
+            )}
           </div>
+          )}
         </div>
 
         {/* Navigation Menu - Visible on Desktop (lg: >= 1024px) */}

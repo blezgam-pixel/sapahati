@@ -51,6 +51,7 @@ export interface CmsConfig {
     brandSubtitle: string;
     contactWhatsapp: string;
     contactEmail: string;
+    botAvatar: string;
   };
   sponsors: SponsorItem[];
   hero: {
@@ -110,90 +111,47 @@ const DEFAULT_CMS_CONFIG: CmsConfig = {
   branding: {
     logoImage: APP_IMAGES.logoImage,
     appIcon: APP_IMAGES.appIcon,
-    brandName: 'Sapahati',
-    brandSubtitle: 'Kesehatan Mental & Konsultasi',
-    contactWhatsapp: '6281298765432',
-    contactEmail: 'halo@sapahati.id',
+    brandName: '',
+    brandSubtitle: '',
+    contactWhatsapp: '',
+    contactEmail: '',
+    botAvatar: APP_IMAGES.botAvatar,
   },
   sponsors: [],
   hero: {
-    title: 'Ruang Aman untuk Mendengar, Merangkul, & Memulihkan Hati',
-    subtitle: 'Teman cerita 24/7 bertenaga AI dan layanan konsultasi profesional bersama psikolog klinis tersertifikasi secara privat & rahasia.',
-    primaryBtnText: 'Mulai Sesi Curhat Gratis',
-    secondaryBtnText: 'Konsultasi Psikolog',
+    title: '',
+    subtitle: '',
+    primaryBtnText: '',
+    secondaryBtnText: '',
     heroImage: APP_IMAGES.heroImage,
   },
   kamiHadir: {
-    sectionTitle: 'Kami Hadir Untukmu',
-    sectionSubtitle: 'Layanan kesehatan mental yang mudah diakses, terjangkau, dan fleksibel sesuai kebutuhan emosionalmu.',
-    items: [
-      {
-        id: 'kh1',
-        title: 'Sesi Curhat 24/7',
-        description: 'Teman curhat responsif berbasis AI yang siap mendengarkan tanpa menghakimi kapan saja kamu merasa cemas atau butuh teman bicara.',
-        badge: 'Gratis & Praktis',
-        buttonText: 'Mulai Sesi Curhat',
-      },
-      {
-        id: 'kh2',
-        title: 'Konsultasi Psikolog',
-        description: 'Pilih jadwal dan metode terbaik: Sesi Chat privat, Video Call interaktif, atau Tatap Muka langsung bersama psikolog tersertifikasi.',
-        badge: 'Layanan Profesional',
-        buttonText: 'Cari Psikolog',
-      },
-      {
-        id: 'kh3',
-        title: 'Mood Tracker & Jurnal',
-        description: 'Catat grafik emosi harian, rilis beban fikiran, dan dapatkan rekomendasi latihan pernapasan mandiri dari para ahli.',
-        badge: 'Mandiri & Terukur',
-        buttonText: 'Buka Mood Tracker',
-      },
-    ],
+    sectionTitle: '',
+    sectionSubtitle: '',
+    items: [],
   },
   kamuTidakSendiri: {
-    sectionTitle: 'Kamu Tidak Sendiri',
-    sectionSubtitle: 'Ribuan kawan Sapahati telah menemukan ketenangan dan sudut pandang baru dalam menghadapi tantangan hidup.',
+    sectionTitle: '',
+    sectionSubtitle: '',
     bannerImage: APP_IMAGES.bannerImage,
-    items: [
-      {
-        id: 'kts1',
-        title: 'Kisah & Komunitas Berdaya',
-        description: 'Bergabung dengan ruang berbagi rasa yang aman, di mana cerita dan pengalamanmu dihargai sepenuh hati.',
-        badge: 'Komunitas',
-        image: APP_IMAGES.bannerImage,
-      },
-      {
-        id: 'kts2',
-        title: 'Tes Stres & Kecemasan DASS-21',
-        description: 'Pahami tingkat kesehatan emosionalmu secara objektif dengan alat ukur standar psikologi klinis.',
-        badge: 'Skrining Gratis',
-        image: 'https://images.unsplash.com/photo-1499209974431-9dac3ada00d7?auto=format&fit=crop&q=80&w=600',
-      },
-      {
-        id: 'kts3',
-        title: 'Panduan Self-Care & Relaksasi',
-        description: 'Akses teknik groundings, mindfulness audio, dan tips mengatasi panic attack darurat kapan saja.',
-        badge: 'Pertolongan Pertama',
-        image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=600',
-      },
-    ],
+    items: [],
   },
   personalityQuiz: {
-    sectionTitle: 'Kuis Tipe Kepribadian & Potensi Diri',
-    sectionSubtitle: 'Temukan karakter unik, kelebihan emosional, dan cara terbaikmu dalam mengelola stres.',
-    headline: 'Kenali Tipe Kepribadianmu dalam 3 Menit',
-    description: 'Jawab 5 pertanyaan singkat untuk memahami gaya komunikasi, kepribadian, dan rekomendasi perawatan diri yang cocok untukmu!',
-    bannerImage: 'https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&q=80&w=600',
-    buttonText: 'Mulai Kuis Kepribadian',
+    sectionTitle: '',
+    sectionSubtitle: '',
+    headline: '',
+    description: '',
+    bannerImage: '',
+    buttonText: '',
   },
   testimonials: {
-    sectionTitle: 'Apa Kata Mereka Tentang Sapahati?',
-    sectionSubtitle: 'Kisah nyata dari kawan Sapahati yang menemukan ketenangan, sudut pandang baru, dan solusi kesehatan mental bersama psikolog & AI kami.',
+    sectionTitle: '',
+    sectionSubtitle: '',
     items: [],
   },
   motivationalPsychologists: {
-    sectionTitle: 'Pesan Dari Tim Psikolog',
-    sectionSubtitle: 'Tim profesional Sapahati siap menemani setiap langkah perjalanan kesehatan mentalmu.',
+    sectionTitle: '',
+    sectionSubtitle: '',
     leftName: '',
     leftTitle: '',
     leftExp: '',
@@ -206,10 +164,10 @@ const DEFAULT_CMS_CONFIG: CmsConfig = {
     rightPhoto: '',
   },
   mitraKarir: {
-    bannerTitle: 'Ingin Daftar Sebagai Psikolog Mitra & Karir?',
-    bannerDescription: 'Bergabunglah bersama ribuan psikolog profesional lainnya di Sapahati. Dapatkan fleksibilitas jam praktik, jam konsultasi digital, dan jangkauan klien yang lebih luas dari seluruh Indonesia.',
-    buttonText: 'Daftar Mitra Psikolog',
-    benefits: ['Jadwal Fleksibel', 'Sistem Digital Praktis', 'Penghasilan Transparan', 'Privasi & Etika Terjamin'],
+    bannerTitle: '',
+    bannerDescription: '',
+    buttonText: '',
+    benefits: [],
   },
 };
 
@@ -231,27 +189,28 @@ function sanitizeCmsConfig(config: CmsConfig): CmsConfig {
     ...config,
     branding: {
       ...config.branding,
-      logoImage: fixSvgDataUri(config.branding?.logoImage || DEFAULT_CMS_CONFIG.branding.logoImage),
-      appIcon: fixSvgDataUri(config.branding?.appIcon || DEFAULT_CMS_CONFIG.branding.appIcon),
+      logoImage: fixSvgDataUri(config.branding?.logoImage || ''),
+      appIcon: fixSvgDataUri(config.branding?.appIcon || ''),
+      botAvatar: fixSvgDataUri(config.branding?.botAvatar || APP_IMAGES.botAvatar),
     },
     hero: {
       ...config.hero,
-      heroImage: fixSvgDataUri(config.hero?.heroImage || DEFAULT_CMS_CONFIG.hero.heroImage),
+      heroImage: fixSvgDataUri(config.hero?.heroImage || ''),
     },
     kamuTidakSendiri: {
       ...config.kamuTidakSendiri,
-      bannerImage: fixSvgDataUri(config.kamuTidakSendiri?.bannerImage || DEFAULT_CMS_CONFIG.kamuTidakSendiri.bannerImage),
-      items: (config.kamuTidakSendiri?.items || DEFAULT_CMS_CONFIG.kamuTidakSendiri.items).map((item) => ({
+      bannerImage: fixSvgDataUri(config.kamuTidakSendiri?.bannerImage || ''),
+      items: (config.kamuTidakSendiri?.items || []).map((item) => ({
         ...item,
         image: fixSvgDataUri(item.image),
       })),
     },
     motivationalPsychologists: {
       ...config.motivationalPsychologists,
-      leftTitle: (config.motivationalPsychologists?.leftTitle === 'Psychologist' || config.motivationalPsychologists?.leftTitle === 'Psikolog' || config.motivationalPsychologists?.leftTitle === 'Psikolog Klinis & Konselor') ? '' : (config.motivationalPsychologists?.leftTitle || ''),
-      leftExp: (config.motivationalPsychologists?.leftExp === 'Pengalaman 8+ Tahun') ? '' : (config.motivationalPsychologists?.leftExp || ''),
-      rightTitle: (config.motivationalPsychologists?.rightTitle === 'Chief Psychologist Officer' || config.motivationalPsychologists?.rightTitle === 'Spesialis Kecemasan & Remaja') ? '' : (config.motivationalPsychologists?.rightTitle || ''),
-      rightExp: (config.motivationalPsychologists?.rightExp === 'Pengalaman 6+ Tahun') ? '' : (config.motivationalPsychologists?.rightExp || ''),
+      leftTitle: config.motivationalPsychologists?.leftTitle || '',
+      leftExp: config.motivationalPsychologists?.leftExp || '',
+      rightTitle: config.motivationalPsychologists?.rightTitle || '',
+      rightExp: config.motivationalPsychologists?.rightExp || '',
     },
   };
 }
@@ -309,6 +268,9 @@ export function importCmsConfigRows(rows: string[][]): void {
   const next: CmsConfig = JSON.parse(JSON.stringify(current));
 
   const sponsorMap: Record<number, { name?: string; logoUrl?: string }> = {};
+  const kamiHadirMap: Record<number, any> = {};
+  const ktsMap: Record<number, any> = {};
+  const testiMap: Record<number, any> = {};
 
   rows.forEach((row) => {
     if (!row || row.length < 3) return;
@@ -340,6 +302,30 @@ export function importCmsConfigRows(rows: string[][]): void {
         if (field === 'name') sponsorMap[idx].name = value;
         if (field === 'logo') sponsorMap[idx].logoUrl = value;
       }
+    } else if (category === 'KamiHadirItem') {
+      const match = key.match(/^item_(\d+)_(.*)$/i);
+      if (match) {
+        const idx = parseInt(match[1], 10);
+        const field = match[2];
+        if (!kamiHadirMap[idx]) kamiHadirMap[idx] = {};
+        kamiHadirMap[idx][field] = value;
+      }
+    } else if (category === 'KamuTidakSendiriItem') {
+      const match = key.match(/^item_(\d+)_(.*)$/i);
+      if (match) {
+        const idx = parseInt(match[1], 10);
+        const field = match[2];
+        if (!ktsMap[idx]) ktsMap[idx] = {};
+        ktsMap[idx][field] = value;
+      }
+    } else if (category === 'TestimonialItem') {
+      const match = key.match(/^item_(\d+)_(.*)$/i);
+      if (match) {
+        const idx = parseInt(match[1], 10);
+        const field = match[2];
+        if (!testiMap[idx]) testiMap[idx] = {};
+        testiMap[idx][field] = value;
+      }
     }
   });
 
@@ -349,6 +335,42 @@ export function importCmsConfigRows(rows: string[][]): void {
       id: 's_' + i,
       name: sponsorMap[i].name || 'Sponsor ' + i,
       logoUrl: sponsorMap[i].logoUrl || '',
+    }));
+  }
+
+  const kamiHadirIndexes = Object.keys(kamiHadirMap).map(Number).sort((a, b) => a - b);
+  if (kamiHadirIndexes.length > 0) {
+    next.kamiHadir.items = kamiHadirIndexes.map((i) => ({
+      id: 'kh_' + i,
+      title: kamiHadirMap[i].title || '',
+      description: kamiHadirMap[i].desc || '',
+      badge: kamiHadirMap[i].badge || '',
+      buttonText: kamiHadirMap[i].btn || '',
+    }));
+  }
+
+  const ktsIndexes = Object.keys(ktsMap).map(Number).sort((a, b) => a - b);
+  if (ktsIndexes.length > 0) {
+    next.kamuTidakSendiri.items = ktsIndexes.map((i) => ({
+      id: 'kts_' + i,
+      title: ktsMap[i].title || '',
+      description: ktsMap[i].desc || '',
+      badge: ktsMap[i].badge || '',
+      image: ktsMap[i].img || '',
+    }));
+  }
+
+  const testiIndexes = Object.keys(testiMap).map(Number).sort((a, b) => a - b);
+  if (testiIndexes.length > 0) {
+    next.testimonials.items = testiIndexes.map((i) => ({
+      id: 't_' + i,
+      name: testiMap[i].name || '',
+      role: testiMap[i].role || '',
+      service: testiMap[i].service || '',
+      comment: testiMap[i].comment || '',
+      rating: parseInt(testiMap[i].rating) || 5,
+      date: testiMap[i].date || 'Baru saja',
+      avatarBg: testiMap[i].avatarBg || 'bg-purple-600 text-white',
     }));
   }
 
@@ -367,6 +389,7 @@ export function exportCmsConfigRows(customConfig?: CmsConfig): string[][] {
     ['Branding', 'contactEmail', config.branding.contactEmail],
     ['Branding', 'logoImage', config.branding.logoImage],
     ['Branding', 'appIcon', config.branding.appIcon],
+    ['Branding', 'botAvatar', config.branding.botAvatar || APP_IMAGES.botAvatar],
     ['Hero', 'title', config.hero.title],
     ['Hero', 'subtitle', config.hero.subtitle],
     ['Hero', 'primaryBtnText', config.hero.primaryBtnText],
@@ -406,6 +429,30 @@ export function exportCmsConfigRows(customConfig?: CmsConfig): string[][] {
   config.sponsors.forEach((s, idx) => {
     rows.push(['Sponsor', `sponsor_${idx + 1}_name`, s.name]);
     rows.push(['Sponsor', `sponsor_${idx + 1}_logo`, s.logoUrl]);
+  });
+
+  config.kamiHadir.items.forEach((item, idx) => {
+    rows.push(['KamiHadirItem', `item_${idx + 1}_title`, item.title]);
+    rows.push(['KamiHadirItem', `item_${idx + 1}_desc`, item.description]);
+    rows.push(['KamiHadirItem', `item_${idx + 1}_badge`, item.badge]);
+    rows.push(['KamiHadirItem', `item_${idx + 1}_btn`, item.buttonText]);
+  });
+
+  config.kamuTidakSendiri.items.forEach((item, idx) => {
+    rows.push(['KamuTidakSendiriItem', `item_${idx + 1}_title`, item.title]);
+    rows.push(['KamuTidakSendiriItem', `item_${idx + 1}_desc`, item.description]);
+    rows.push(['KamuTidakSendiriItem', `item_${idx + 1}_badge`, item.badge]);
+    rows.push(['KamuTidakSendiriItem', `item_${idx + 1}_img`, item.image]);
+  });
+
+  config.testimonials.items.forEach((item, idx) => {
+    rows.push(['TestimonialItem', `item_${idx + 1}_name`, item.name]);
+    rows.push(['TestimonialItem', `item_${idx + 1}_role`, item.role]);
+    rows.push(['TestimonialItem', `item_${idx + 1}_service`, item.service]);
+    rows.push(['TestimonialItem', `item_${idx + 1}_comment`, item.comment]);
+    rows.push(['TestimonialItem', `item_${idx + 1}_rating`, item.rating.toString()]);
+    rows.push(['TestimonialItem', `item_${idx + 1}_date`, item.date]);
+    rows.push(['TestimonialItem', `item_${idx + 1}_avatarBg`, item.avatarBg]);
   });
 
   return rows;

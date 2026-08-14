@@ -25,13 +25,17 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
         {/* Left Column: Headline, Subtitle & Badges */}
         <div className="space-y-3 sm:space-y-6 text-left">
           <div className="space-y-1.5 sm:space-y-4">
+            {hero.title && (
             <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-[#1D123B] leading-[1.15] tracking-tight">
               {hero.title}
             </h1>
+            )}
 
+            {hero.subtitle && (
             <p className="text-[#64748B] text-xs sm:text-base md:text-lg leading-relaxed font-normal max-w-lg pt-0.5 sm:pt-1">
               {hero.subtitle}
             </p>
+            )}
           </div>
 
           {/* Feature Badges (Pills) */}
@@ -54,7 +58,8 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
           </div>
         </div>
 
-        {/* Right Column: Hero Image beside text */}
+        {/* Right Column: Hero Image beside text — hanya tampil jika ada gambar */}
+        {hero.heroImage && (
         <div className="relative flex items-center justify-center p-0 sm:p-2">
           <div className="relative w-full min-h-[260px] sm:min-h-[360px] md:min-h-[440px] lg:min-h-[480px] flex items-center justify-center p-2 sm:p-4">
             <TransparentImage 
@@ -64,6 +69,7 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
             />
           </div>
         </div>
+        )}
 
       </div>
     </section>

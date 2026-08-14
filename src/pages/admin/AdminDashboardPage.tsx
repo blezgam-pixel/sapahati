@@ -1590,6 +1590,39 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Spesialisasi Utama / Title</label>
+                  <input
+                    type="text"
+                    value={editingPsychologist.title}
+                    onChange={(e) => setEditingPsychologist({ ...editingPsychologist, title: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Pengalaman (Tahun)</label>
+                  <input
+                    type="number"
+                    value={editingPsychologist.experienceYears || 0}
+                    onChange={(e) => setEditingPsychologist({ ...editingPsychologist, experienceYears: Number(e.target.value) })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-bold"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Daftar Keahlian (Dipisah koma)</label>
+                <input
+                  type="text"
+                  value={editingPsychologist.specialties?.join(', ') || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const arr = val.split(',').map(s => s.trim()).filter(s => s !== '');
+                    setEditingPsychologist({ ...editingPsychologist, specialties: arr });
+                  }}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-bold"
+                />
+              </div>
 
               {/* Foto Profil Psikolog */}
               <div className="p-3.5 bg-purple-50/50 rounded-2xl border border-purple-100 space-y-2">

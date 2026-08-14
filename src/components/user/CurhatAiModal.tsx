@@ -102,17 +102,53 @@ export const CurhatAiModal: React.FC<CurhatAiModalProps> = ({ isOpen, onClose, o
         body: JSON.stringify({ prompt: text, turn: nextTurn, history: messages }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const aiMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
+      if (!response.ok) throw new Error('Fallback response');
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder('utf-8');
+      
+      const aiMsgId = (Date.now() + 1).toString();
+      let aiText = '';
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: aiMsgId,
           sender: 'ai',
-          text: data.reply || 'Makasih yaa udah mau cerita ke aku 💜. Apapun yang kamu rasain saat ini valid bgt kok.',
+          text: '',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        setMessages((prev) => [...prev, aiMsg]);
-      } else {
-        throw new Error('Fallback response');
+        },
+      ]);
+      setIsTyping(false);
+
+      if (reader) {
+        let buffer = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n\n');
+          buffer = lines.pop() || '';
+          
+          for (const chunk of lines) {
+            const linesInChunk = chunk.split('\n');
+            for (const line of linesInChunk) {
+              if (line.startsWith('data: ')) {
+                const dataStr = line.slice(6).trim();
+                if (dataStr === '[DONE]') break;
+                try {
+                  const data = JSON.parse(dataStr);
+                  if (data.text) {
+                    aiText += data.text;
+                    setMessages((prev) =>
+                      prev.map((msg) => (msg.id === aiMsgId ? { ...msg, text: aiText } : msg))
+                    );
+                  }
+                } catch (e) {}
+              }
+            }
+          }
+        }
       }
     } catch {
       setTimeout(() => {

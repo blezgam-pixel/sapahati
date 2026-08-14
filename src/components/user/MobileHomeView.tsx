@@ -43,38 +43,7 @@ export const MobileHomeView: React.FC<MobileHomeViewProps> = ({
 
   const testimonials = cms.testimonials?.items && cms.testimonials.items.length > 0
     ? cms.testimonials.items
-    : [
-        {
-          id: 't1',
-          name: 'Anisa R.',
-          role: 'Mahasiswi (22 th)',
-          service: 'Sesi Curhat & Chat',
-          comment: 'Awalnya cemas banget pas lagi burnout tugas akhir. Sesi Curhat langsung responsif 24 jam tanpa menghakimi, lalu lanjut sesi chat dengan Psikolog. Lega banget bisa rilis beban emosi!',
-          rating: 5,
-          date: '3 hari yang lalu',
-          avatarBg: 'bg-purple-600 text-white',
-        },
-        {
-          id: 't2',
-          name: 'Budi Santoso',
-          role: 'Karyawan Swasta (29 th)',
-          service: 'Video Call Psikolog',
-          comment: 'Psikolognya sangat komunikatif dan empatik. Dalam 60 menit sesi video call, saya dapet sudut pandang baru untuk atasi masalah kecemasan kerja. Proses pendaftarannya juga praktis!',
-          rating: 5,
-          date: '1 minggu yang lalu',
-          avatarBg: 'bg-teal-600 text-white',
-        },
-        {
-          id: 't3',
-          name: 'Clarissa M.',
-          role: 'Freelancer (25 th)',
-          service: 'Konsultasi Tatap Muka',
-          comment: 'Privasi benar-benar terjamin. Tempat tatap mukanya nyaman dan psikolog mendengar cerita saya dengan sabar tanpa memberi penilaian negatif. Recomended bgt!',
-          rating: 5,
-          date: '2 minggu yang lalu',
-          avatarBg: 'bg-indigo-600 text-white',
-        },
-      ];
+    : [];
 
   // Auto-scroll / move testimonials every 4.5 seconds
   useEffect(() => {
@@ -161,7 +130,8 @@ export const MobileHomeView: React.FC<MobileHomeViewProps> = ({
               </p>
             </div>
 
-            {/* Right Illustration: Hero Banner Image synced with Spreadsheet / CMS */}
+            {/* Right Illustration: Hero Banner Image — hanya tampil jika ada gambar */}
+            {cms.hero.heroImage && (
             <div className="relative w-44 h-44 sm:w-56 sm:h-56 shrink-0 z-10 flex items-center justify-center -my-3 -mr-2">
               <TransparentImage 
                 src={cms.hero.heroImage} 
@@ -169,6 +139,7 @@ export const MobileHomeView: React.FC<MobileHomeViewProps> = ({
                 className="w-full h-full object-contain"
               />
             </div>
+            )}
 
           </div>
         </div>
@@ -359,7 +330,8 @@ export const MobileHomeView: React.FC<MobileHomeViewProps> = ({
           </div>
         </div>
 
-        {/* 5. "Kata Mereka" / Testimonials Section (Ulasan Pengguna seperti di mode web) */}
+        {/* 5. "Kata Mereka" / Testimonials Section — hanya tampil jika ada data dari Spreadsheet */}
+        {testimonials.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-extrabold text-[#1D123B] flex items-center gap-1.5">
@@ -452,6 +424,7 @@ export const MobileHomeView: React.FC<MobileHomeViewProps> = ({
           </div>
 
         </div>
+        )}
 
       </div>
 

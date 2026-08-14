@@ -5,6 +5,7 @@ import { Header } from '../../components/user/Header';
 import { MobileHeader } from '../../components/user/MobileHeader';
 import { MobileBottomNav } from '../../components/user/MobileBottomNav';
 import { NavigationDrawer } from '../../components/user/NavigationDrawer';
+import { useCmsConfig } from '../../data/cmsStore';
 import { APP_IMAGES } from '../../data/appImages';
 
 interface CurhatAiPageProps {
@@ -80,6 +81,7 @@ export const CurhatAiPage: React.FC<CurhatAiPageProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const config = useCmsConfig();
 
   // Count how many questions user has sent in current session
   const questionsCount = messages.filter((m) => m.sender === 'user').length;
@@ -113,17 +115,53 @@ export const CurhatAiPage: React.FC<CurhatAiPageProps> = ({
         body: JSON.stringify({ prompt: text, turn: nextTurn, history: messages }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const aiMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
+      if (!response.ok) throw new Error('Fallback response');
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder('utf-8');
+      
+      const aiMsgId = (Date.now() + 1).toString();
+      let aiText = '';
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: aiMsgId,
           sender: 'ai',
-          text: data.reply || 'Makasih yaa udah mau cerita ke aku 💜. Apapun yang kamu rasain saat ini valid bgt kok.',
+          text: '',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        setMessages((prev) => [...prev, aiMsg]);
-      } else {
-        throw new Error('Fallback response');
+        },
+      ]);
+      setIsTyping(false); // Stop typing indicator since we are streaming immediately
+
+      if (reader) {
+        let buffer = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n\n');
+          buffer = lines.pop() || '';
+          
+          for (const chunk of lines) {
+            const linesInChunk = chunk.split('\n');
+            for (const line of linesInChunk) {
+              if (line.startsWith('data: ')) {
+                const dataStr = line.slice(6).trim();
+                if (dataStr === '[DONE]') break;
+                try {
+                  const data = JSON.parse(dataStr);
+                  if (data.text) {
+                    aiText += data.text;
+                    setMessages((prev) =>
+                      prev.map((msg) => (msg.id === aiMsgId ? { ...msg, text: aiText } : msg))
+                    );
+                  }
+                } catch (e) {}
+              }
+            }
+          }
+        }
       }
     } catch {
       setTimeout(() => {
@@ -171,7 +209,7 @@ export const CurhatAiPage: React.FC<CurhatAiPageProps> = ({
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-2xl bg-gradient-to-tr from-[#6C47FF] to-pink-500 p-0.5 shrink-0 shadow-2xs">
               <div className="w-full h-full bg-white rounded-2xl flex items-center justify-center overflow-hidden">
-                <img src={APP_IMAGES.botAvatar} alt="Sesi Curhat" className="w-full h-full object-cover" />
+                <img src={config.branding.botAvatar || APP_IMAGES.botAvatar} alt="Sesi Curhat" className="w-full h-full object-cover" />
               </div>
             </div>
             <div>
@@ -196,7 +234,7 @@ export const CurhatAiPage: React.FC<CurhatAiPageProps> = ({
               {msg.sender === 'ai' ? (
                 <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#6C47FF] to-pink-500 p-0.5 shrink-0 shadow-2xs">
                   <div className="w-full h-full bg-white rounded-full flex items-center justify-center overflow-hidden">
-                    <img src={APP_IMAGES.botAvatar} alt="Sesi Curhat" className="w-full h-full object-cover" />
+                    <img src={config.branding.botAvatar || APP_IMAGES.botAvatar} alt="Sesi Curhat" className="w-full h-full object-cover" />
                   </div>
                 </div>
               ) : (

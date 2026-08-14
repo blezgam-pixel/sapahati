@@ -20,10 +20,12 @@ import { MobileHomeView } from './components/user/MobileHomeView';
 import { MobileBottomNav } from './components/user/MobileBottomNav';
 import { processImageToTransparentUrl } from './components/common/TransparentImage';
 import { APP_IMAGES } from './data/appImages';
-import { getCmsConfig, subscribeCmsConfig, CmsConfig } from './data/cmsStore';
+import { getCmsConfig, subscribeCmsConfig, useCmsConfig, CmsConfig } from './data/cmsStore';
 import { initGoogleAuth } from './services/googleSheets';
 
 export default function App() {
+  const cmsConfig = useCmsConfig();
+
   // Automatically trigger Google Sheets auth & background data sync on app start
   useEffect(() => {
     initGoogleAuth();
@@ -139,7 +141,7 @@ export default function App() {
     const updateFavicon = async (cmsConfig?: CmsConfig) => {
       const config = cmsConfig || getCmsConfig();
       const iconUrl = config.branding?.appIcon || config.branding?.logoImage || APP_IMAGES.appIcon;
-      if (iconUrl) {
+      if (iconUrl && iconUrl.trim().length > 0) {
         const transparentIconUrl = await processImageToTransparentUrl(iconUrl);
         let favicons = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
         if (favicons.length === 0) {
@@ -338,7 +340,7 @@ export default function App() {
         isOpen={isCurhatAiOpen}
         onClose={() => setIsCurhatAiOpen(false)}
         onOpenPsikolog={navigateToKonsultasi}
-        botAvatar={APP_IMAGES.botAvatar}
+        botAvatar={cmsConfig.branding.botAvatar}
       />
 
       <PsikologModal

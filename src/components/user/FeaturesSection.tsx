@@ -21,29 +21,12 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
   }, []);
 
   const kamiHadir = cms.kamiHadir;
-  const items = kamiHadir.items && kamiHadir.items.length >= 3 ? kamiHadir.items : [
-    {
-      id: 'kh1',
-      title: 'Sesi Curhat',
-      description: 'Ceritakan apa pun yang kamu rasakan tanpa takut dihakimi. AI siap mendengarkan kapan saja.',
-      badge: 'Gratis 24/7',
-      buttonText: 'Mulai Sesi Curhat',
-    },
-    {
-      id: 'kh2',
-      title: 'Konsultasi Psikolog',
-      description: 'Bicara langsung dengan psikolog profesional berlisensi secara aman, fleksibel, dan terjangkau.',
-      badge: 'Profesional',
-      buttonText: 'Cari Psikolog',
-    },
-    {
-      id: 'kh3',
-      title: 'Kenali Dirimu (Mood)',
-      description: 'Catat suasana hatimu setiap hari dan temukan insight berharga untuk kesehatan emosionalmu.',
-      badge: 'Mood Tracker',
-      buttonText: 'Buka Mood Tracker',
-    },
-  ];
+  const items = kamiHadir.items && kamiHadir.items.length >= 3 ? kamiHadir.items : [];
+
+  // Jika tidak ada data "Kami Hadir" dari Spreadsheet, sembunyikan section
+  if (items.length === 0) {
+    return null;
+  }
 
   return (
     <section className="px-4 sm:px-6 lg:px-8 py-3 sm:py-6 max-w-6xl mx-auto">

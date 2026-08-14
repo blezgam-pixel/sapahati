@@ -22,7 +22,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPsikolog, hideExtraSection
 
   const branding = cms.branding;
   const mitra = cms.mitraKarir;
-  const rawWa = branding.contactWhatsapp || '6281298765432';
+  const rawWa = branding.contactWhatsapp || '';
   const cleanWa = rawWa.replace(/\D/g, '');
   const formattedWa = rawWa.startsWith('+') ? rawWa : `+${cleanWa}`;
   const whatsappUrl = `https://wa.me/${cleanWa}?text=Halo%20Admin%20${encodeURIComponent(branding.brandName)},%20saya%20ingin%20mendaftar%20sebagai%20Psikolog%20Mitra`;

@@ -454,6 +454,47 @@ export const CmsAdminTab: React.FC = () => {
               </div>
             </div>
 
+            {/* AI Logo / Bot Avatar */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700">Logo AI (Bot Curhat)</label>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-[#f0f3f8] border border-slate-200 p-2 flex items-center justify-center shrink-0 overflow-hidden">
+                  <TransparentImage src={config.branding.botAvatar} alt="AI Logo" className="w-full h-full object-contain" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <input
+                    type="text"
+                    value={config.branding.botAvatar}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        branding: { ...config.branding, botAvatar: e.target.value },
+                      })
+                    }
+                    placeholder="URL Logo AI"
+                    className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-purple-500"
+                  />
+                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 text-xs font-bold cursor-pointer transition-colors">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Logo AI Baru</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) =>
+                        handleImageUpload(e, (url) =>
+                          setConfig({
+                            ...config,
+                            branding: { ...config.branding, botAvatar: url },
+                          })
+                        )
+                      }
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
             {/* Judul Logo / Brand Name */}
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-700">Judul Logo (Nama Brand)</label>
@@ -1194,7 +1235,7 @@ export const CmsAdminTab: React.FC = () => {
                       value={item.name}
                       onChange={(e) => {
                         const updated = [...config.testimonials.items];
-                        updated[idx].name = e.target.value;
+                        updated[idx] = { ...updated[idx], name: e.target.value };
                         setConfig({
                           ...config,
                           testimonials: { ...config.testimonials, items: updated },
@@ -1208,7 +1249,7 @@ export const CmsAdminTab: React.FC = () => {
                       value={item.role}
                       onChange={(e) => {
                         const updated = [...config.testimonials.items];
-                        updated[idx].role = e.target.value;
+                        updated[idx] = { ...updated[idx], role: e.target.value };
                         setConfig({
                           ...config,
                           testimonials: { ...config.testimonials, items: updated },
@@ -1222,7 +1263,7 @@ export const CmsAdminTab: React.FC = () => {
                       value={item.service}
                       onChange={(e) => {
                         const updated = [...config.testimonials.items];
-                        updated[idx].service = e.target.value;
+                        updated[idx] = { ...updated[idx], service: e.target.value };
                         setConfig({
                           ...config,
                           testimonials: { ...config.testimonials, items: updated },
@@ -1238,7 +1279,7 @@ export const CmsAdminTab: React.FC = () => {
                     value={item.comment}
                     onChange={(e) => {
                       const updated = [...config.testimonials.items];
-                      updated[idx].comment = e.target.value;
+                      updated[idx] = { ...updated[idx], comment: e.target.value };
                       setConfig({
                         ...config,
                         testimonials: { ...config.testimonials, items: updated },

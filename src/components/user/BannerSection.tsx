@@ -30,15 +30,20 @@ export const BannerSection: React.FC<BannerSectionProps> = ({
           
           {/* Text Info */}
           <div className="space-y-1.5 sm:space-y-3 text-left w-full md:max-w-xl">
+            {kamuTidakSendiri.sectionTitle && (
             <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold text-[#1D123B] tracking-tight">
               {kamuTidakSendiri.sectionTitle}
             </h2>
+            )}
+            {kamuTidakSendiri.sectionSubtitle && (
             <p className="text-[#475569] text-xs sm:text-base leading-relaxed font-normal">
               {kamuTidakSendiri.sectionSubtitle}
             </p>
+            )}
           </div>
 
-          {/* Banner Graphic Image Synced with Spreadsheet / CMS */}
+          {/* Banner Graphic Image — hanya tampil jika ada gambar dari Spreadsheet */}
+          {bannerImgSrc && (
           <div className="relative w-full md:w-80 lg:w-96 max-h-48 md:max-h-none aspect-16/9 md:aspect-4/3 flex items-center justify-center shrink-0 p-1">
             <TransparentImage 
               src={bannerImgSrc} 
@@ -46,6 +51,7 @@ export const BannerSection: React.FC<BannerSectionProps> = ({
               className="w-full h-full object-contain transition-transform duration-300 hover:scale-105"
             />
           </div>
+          )}
 
         </div>
 

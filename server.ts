@@ -210,7 +210,12 @@ app.post('/api/curhat', async (req, res) => {
         fallbackText = generalReplies[(currentTurn - 1) % generalReplies.length];
       }
 
-      return res.json({ reply: fallbackText, turn: currentTurn });
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.write(`data: ${JSON.stringify({ text: fallbackText })}\n\n`);
+      res.write('data: [DONE]\n\n');
+      return res.end();
     }
 
     const ai = new GoogleGenAI({
@@ -255,9 +260,13 @@ ${formattedHistory ? `[RIWAYAT PERCAKAPAN SEBELUMNYA]:\n${formattedHistory}\n` :
 [PESAN TERBARU PENGGUNA]:
 ${prompt}`;
 
-    let response;
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    let stream;
     try {
-      response = await ai.models.generateContent({
+      stream = await ai.models.generateContentStream({
         model: 'gemini-3.6-flash',
         contents: [
           {
@@ -268,7 +277,7 @@ ${prompt}`;
       });
     } catch (modelErr) {
       console.warn('Primary model gemini-3.6-flash failed, trying fallback model gemini-3.1-flash-lite...', modelErr);
-      response = await ai.models.generateContent({
+      stream = await ai.models.generateContentStream({
         model: 'gemini-3.1-flash-lite',
         contents: [
           {
@@ -279,14 +288,25 @@ ${prompt}`;
       });
     }
 
-    const reply = response.text || `Makasih yaa udah mau cerita ke aku. Aku selalu di sini siap dengerin kamu kapan aja 💜`;
-    return res.json({ reply });
+    for await (const chunk of stream) {
+      if (chunk.text) {
+        res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
+      }
+    }
+    
+    res.write('data: [DONE]\n\n');
+    return res.end();
 
   } catch (error) {
     console.error('Curhat API Error:', error);
-    return res.json({
-      reply: 'Makasih yaa udah mau cerita ke aku 💜. Aku paham bgt perasaanmu saat ini valid banget. Pelan-pelan aja yaa, kamu gak sendirian kok.'
-    });
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+    }
+    res.write(`data: ${JSON.stringify({ text: 'Makasih yaa udah mau cerita ke aku 💜. Aku paham bgt perasaanmu saat ini valid banget. Pelan-pelan aja yaa, kamu gak sendirian kok.' })}\n\n`);
+    res.write('data: [DONE]\n\n');
+    return res.end();
   }
 });
 
