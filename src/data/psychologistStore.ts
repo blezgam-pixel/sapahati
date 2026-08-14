@@ -100,36 +100,27 @@ export async function createBooking(booking: Omit<BookingSession, 'id' | 'status
     createdAt: new Date().toISOString(),
   };
 
-  const state = getSyncState();
-
-  if (state.status === 'connected' && state.spreadsheetId) {
-    try {
-      // Use atomic server-side append to prevent race conditions with concurrent bookings
-      const res = await fetch('/api/sheets/bookings/append', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ booking: created }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        // Update local cache with the merged list returned by server
-        if (Array.isArray(data.bookings)) {
-          localStorage.setItem(BOOKINGS_KEY, JSON.stringify(data.bookings));
-          notifyListeners();
-          return created;
-        }
-      }
-    } catch (err) {
-      console.warn('Atomic append failed, falling back to local save:', err);
-    }
-  }
-
-  // Fallback: offline mode or server error → save locally only
+  // Always save locally first for immediate UI update
   const current = getBookings();
   const updated = [created, ...current];
   localStorage.setItem(BOOKINGS_KEY, JSON.stringify(updated));
   notifyListeners();
+
+  const state = getSyncState();
+  if (state.status === 'connected' && state.spreadsheetId) {
+    try {
+      // Use atomic server-side append: 1 baris baru ditulis langsung ke Sheets
+      // Ini aman untuk request paralel karena values.append di Google Sheets API bersifat atomik
+      await fetch('/api/sheets/bookings/append', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking: created }),
+      });
+    } catch (err) {
+      console.warn('Append to Sheets failed (booking saved locally):', err);
+    }
+  }
+
   return created;
 }
 

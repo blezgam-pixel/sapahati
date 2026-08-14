@@ -393,6 +393,45 @@ export async function updateBookingsInSheet(bookings: any[]) {
   });
 }
 
+// Atomic append: langsung tambah 1 baris baru tanpa perlu baca semua data dulu
+// Menggunakan API values.append yang atomik sehingga aman untuk concurrent bookings
+export async function appendBookingToSheet(booking: any) {
+  const config = loadSheetsConfig();
+  if (!config.serviceAccountJson || !config.spreadsheetId) return false;
+
+  const auth = getSheetsAuthClient();
+  const sheets = google.sheets({ version: 'v4', auth: auth as any });
+
+  const row = [
+    booking.id,
+    booking.patientName,
+    booking.patientAge,
+    booking.patientWhatsapp,
+    booking.psychologistId,
+    booking.psychologistName,
+    booking.method,
+    booking.methodTitle,
+    booking.timeSlot,
+    booking.price,
+    booking.paymentReceiptName || '',
+    booking.paymentReceiptUrl || '',
+    booking.status,
+    booking.createdAt,
+    booking.userId || '',
+    booking.userEmail || '',
+  ];
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: config.spreadsheetId,
+    range: 'Bookings!A:P',
+    valueInputOption: 'USER_ENTERED',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: { values: [row] },
+  });
+
+  return true;
+}
+
 export async function getPsychologistsFromSheet() {
   const config = loadSheetsConfig();
   if (!config.serviceAccountJson || !config.spreadsheetId) return [];

@@ -8,6 +8,7 @@ import {
   ensureSheetHeaders,
   getBookingsFromSheet,
   updateBookingsInSheet,
+  appendBookingToSheet,
   getPsychologistsFromSheet,
   updatePsychologistsInSheet,
   getCmsConfigFromSheet,
@@ -80,20 +81,16 @@ app.post('/api/sheets/bookings', async (req, res) => {
   }
 });
 
-// Atomic append: read existing bookings then add new one server-side (prevents race conditions)
+// Atomic append: langsung tulis 1 baris baru ke Sheets tanpa baca semua dulu
+// values.append di Google Sheets API bersifat atomik — aman untuk request paralel
 app.post('/api/sheets/bookings/append', async (req, res) => {
   try {
     const { booking } = req.body;
     if (!booking || !booking.id) {
       return res.status(400).json({ error: 'Data booking tidak valid' });
     }
-    // Read latest from Sheets first
-    const existing = await getBookingsFromSheet();
-    // Append new booking at the top (avoid duplicates by id)
-    const merged = [booking, ...existing.filter((b: any) => b.id !== booking.id)];
-    // Write merged back
-    await updateBookingsInSheet(merged);
-    res.json({ success: true, bookings: merged });
+    await appendBookingToSheet(booking);
+    res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Gagal menambah booking' });
   }
