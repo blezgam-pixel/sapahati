@@ -27,7 +27,7 @@ import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 import { APP_IMAGES } from '../../data/appImages';
 import { auth, googleProvider } from '../../lib/firebase';
-import { signInWithPopup, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { getCmsConfig } from '../../data/cmsStore';
 import { 
   getPsychologists, 
@@ -183,6 +183,30 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
     const authUnsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsAuthLoading(false);
+
+      if (currentUser) {
+        // Restore booking draft if it exists after redirect login
+        const draftStr = sessionStorage.getItem('sapahati_booking_draft');
+        if (draftStr) {
+          try {
+             const draft = JSON.parse(draftStr);
+             const psychs = getPsychologists();
+             const targetPsych = psychs.find(p => p.id === draft.psychId);
+             if (targetPsych) {
+               setSelectedPsikolog(targetPsych);
+               setSelectedMethod(draft.method);
+               setSelectedTime(draft.time);
+               setPatientName(draft.patientName || '');
+               setPatientAge(draft.patientAge || '');
+               setPatientWhatsapp(draft.patientWhatsapp || '');
+               setStep(1); // Return directly to the form/payment step
+             }
+             sessionStorage.removeItem('sapahati_booking_draft');
+          } catch(e) {
+             console.error('Failed to parse draft', e);
+          }
+        }
+      }
     });
 
     return () => {
@@ -193,7 +217,20 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
 
   const handleLogin = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      // Save current state so user doesn't lose it when page reloads after redirect
+      const draft = {
+        psychId: selectedPsikolog?.id,
+        method: selectedMethod,
+        time: selectedTime,
+        patientName,
+        patientAge,
+        patientWhatsapp,
+        step: 1
+      };
+      sessionStorage.setItem('sapahati_booking_draft', JSON.stringify(draft));
+      
+      // Use redirect instead of popup to fix in-app browser and Safari mobile issues
+      await signInWithRedirect(auth, googleProvider);
     } catch (error) {
       console.error('Login failed', error);
       alert('Login dibatalkan atau gagal.');

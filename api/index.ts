@@ -313,12 +313,13 @@ ${prompt}`;
     res.write('data: [DONE]\n\n');
     return res.end();
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Curhat API Error:', error);
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-    res.write(`data: ${JSON.stringify({ text: 'Makasih yaa udah mau cerita ke aku 💜. Aku paham bgt perasaanmu saat ini valid banget. Pelan-pelan aja yaa, kamu gak sendirian kok.' })}\n\n`);
+    const errMsg = error.message || String(error);
+    res.write(`data: ${JSON.stringify({ text: `Maaf ya, sistem AI lagi ada kendala teknis sedikit di server 😭 (${errMsg}). Coba sapa aku lagi yaa!` })}\n\n`);
     res.write('data: [DONE]\n\n');
     return res.end();
   }
