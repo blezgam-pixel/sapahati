@@ -23,6 +23,12 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { Psychologist, ConsultationMethod, BookingSession } from '../../types';
+import * as htmlToImage from 'html-to-image';
+import jsPDF from 'jspdf';
+import { APP_IMAGES } from '../../data/appImages';
+import { auth, googleProvider } from '../../lib/firebase';
+import { signInWithPopup, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { getCmsConfig } from '../../data/cmsStore';
 import { 
   getPsychologists, 
   getBookings, 
@@ -98,6 +104,10 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
   const [selectedTopic, setSelectedTopic] = useState('Semua');
   const [selectedTimeFilter, setSelectedTimeFilter] = useState<string>('ALL');
 
+  // Firebase Auth State
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+
   // Booking Flow States
   const [selectedPsikolog, setSelectedPsikolog] = useState<Psychologist | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<ConsultationMethod>('video');
@@ -119,6 +129,47 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
   const [receiptDataUrl, setReceiptDataUrl] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const receiptRef = React.useRef<HTMLDivElement>(null);
+
+  const downloadReceiptPDF = async () => {
+    if (!receiptRef.current) return;
+    try {
+      const el = receiptRef.current;
+      
+      // html-to-image supports modern CSS like oklch
+      const imgData = await htmlToImage.toPng(el, { 
+        backgroundColor: '#ffffff',
+        pixelRatio: 2
+      });
+      
+      // Get dimensions of the element to scale PDF correctly
+      const width = el.offsetWidth;
+      const height = el.offsetHeight;
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [width, height]
+      });
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, width, height);
+      pdf.save('Struk_Konsultasi_SapaHati.pdf');
+    } catch (err) {
+      console.error('Failed to generate PDF receipt', err);
+      alert('Maaf, gagal membuat PDF: ' + (err as Error).message);
+    }
+  };
+
+  useEffect(() => {
+    if (step === 2) {
+      // Small delay to ensure the DOM is fully rendered before capturing
+      const timer = setTimeout(() => {
+        downloadReceiptPDF();
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [step]);
 
   useEffect(() => {
     setPsychologists(getPsychologists());
@@ -128,8 +179,26 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
       setPsychologists(getPsychologists());
       setBookings(getBookings());
     });
-    return () => unsubscribe();
+
+    const authUnsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setIsAuthLoading(false);
+    });
+
+    return () => {
+      unsubscribe();
+      authUnsubscribe();
+    };
   }, []);
+
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error('Login failed', error);
+      alert('Login dibatalkan atau gagal.');
+    }
+  };
 
   // Get schedule slots for a psychologist
   const getPsychSlots = (psych: Psychologist): string[] => {
@@ -142,7 +211,7 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
   // Check if slot is booked
   const isSlotBooked = (psychId: string, time: string) => {
     return bookings.some(
-      (b) => b.psychologistId === psychId && b.timeSlot === time && b.status !== 'cancelled'
+      (b) => b.psychologistId === psychId && b.timeSlot === time && (b.status === 'pending' || b.status === 'confirmed')
     );
   };
 
@@ -297,6 +366,10 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
 
   const handleCreateBooking = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      alert('Silakan login terlebih dahulu untuk membuat pesanan.');
+      return;
+    }
     if (!selectedPsikolog || !patientName.trim() || !patientAge || !patientWhatsapp.trim()) return;
 
     if (isSlotBooked(selectedPsikolog.id, selectedTime)) {
@@ -322,6 +395,8 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
         price,
         paymentReceiptName: receiptFileName || 'Bukti_Transfer_QRIS.jpg',
         paymentReceiptUrl: receiptDataUrl || undefined,
+        userId: user.uid,
+        userEmail: user.email || undefined,
       });
 
       setCreatedBookingId(created.id);
@@ -336,6 +411,20 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
   const currentPrice = selectedPsikolog
     ? selectedPsikolog.prices?.[selectedMethod] || (selectedPsikolog as any).price || 150000
     : 0;
+
+  // Cek jika pengguna memiliki pemesanan aktif
+  const activeBooking = useMemo(() => {
+    if (!user) return null;
+    // Cari booking milik user ini yang statusnya pending atau confirmed
+    return bookings.find((b) => b.userId === user.uid && (b.status === 'pending' || b.status === 'confirmed'));
+  }, [user, bookings]);
+
+  // Cek status booking yang baru saja dibuat di step 2
+  const currentCreatedStatus = useMemo(() => {
+    if (!createdBookingId) return 'pending';
+    const b = bookings.find((bk) => bk.id === createdBookingId);
+    return b ? b.status : 'pending';
+  }, [createdBookingId, bookings]);
 
   const cms = useCmsConfig();
   const adminWa = cms.branding?.contactWhatsapp || '6281298765432';
@@ -391,6 +480,102 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
         
         {step === 0 && (
           <>
+            {/* Status Pesanan Aktif (Jika Ada) */}
+            {activeBooking && (
+              <div className={`rounded-3xl p-4 sm:p-5 shadow-sm mb-6 animate-fade-in border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${activeBooking.status === 'confirmed' ? 'bg-emerald-50 border-emerald-200' : 'bg-orange-50 border-orange-200'}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${activeBooking.status === 'confirmed' ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
+                    {activeBooking.status === 'confirmed' ? (
+                      <CheckCircle2 className="w-5 h-5" />
+                    ) : (
+                      <Clock className="w-5 h-5 animate-pulse" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h2 className={`text-sm sm:text-base font-black ${activeBooking.status === 'confirmed' ? 'text-emerald-800' : 'text-orange-800'}`}>
+                        {activeBooking.status === 'confirmed' ? 'Sesi Terkonfirmasi' : 'Menunggu ACC Admin'}
+                      </h2>
+                      <span className={`text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full font-bold ${activeBooking.status === 'confirmed' ? 'bg-emerald-200 text-emerald-800' : 'bg-orange-200 text-orange-800'}`}>
+                        {activeBooking.status === 'confirmed' ? 'Selesai' : 'Pending'}
+                      </span>
+                    </div>
+                    <p className={`text-[11px] sm:text-xs ${activeBooking.status === 'confirmed' ? 'text-emerald-700' : 'text-orange-700'}`}>
+                      <strong>{activeBooking.psychologistName}</strong> • {activeBooking.timeSlot}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Tombol Download Struk dari Status */}
+                <button 
+                  onClick={downloadReceiptPDF}
+                  className={`text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer bg-white px-4 py-2.5 rounded-xl border shadow-xs transition-all active:scale-95 w-full sm:w-auto ${activeBooking.status === 'confirmed' ? 'text-emerald-700 border-emerald-200 hover:bg-emerald-50' : 'text-orange-700 border-orange-200 hover:bg-orange-50'}`}
+                >
+                  <FileCheck className="w-4 h-4" /> Download Struk
+                </button>
+
+                {/* Hidden Receipt UI specifically for activeBooking PDF generation */}
+                <div className="fixed -left-[9999px] -top-[9999px] w-[500px] z-[-50]">
+                  <div ref={receiptRef} className="bg-white p-6 rounded-xl space-y-5 text-center shadow-none">
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                       {(getCmsConfig().branding.logoImage || APP_IMAGES.logoImage) && (
+                         <img src={getCmsConfig().branding.logoImage || APP_IMAGES.logoImage} alt="Sapa Hati Logo" className="h-8" />
+                       )}
+                       <span className="font-extrabold text-[#1D123B] text-xl tracking-tight">Sapa Hati</span>
+                    </div>
+
+                    <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-xs ${activeBooking.status === 'confirmed' ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
+                      {activeBooking.status === 'confirmed' ? <Check className="w-10 h-10 stroke-[3]" /> : <Clock className="w-10 h-10 stroke-[3]" />}
+                    </div>
+
+                    <div className="space-y-2">
+                      <span className={`px-3.5 py-1 rounded-full text-xs font-black border inline-block ${activeBooking.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-orange-100 text-orange-800 border-orange-300'}`}>
+                        {activeBooking.status === 'confirmed' ? 'Sesi Telah Dikonfirmasi' : 'Pendaftaran Terkirim'}
+                      </span>
+                      <h2 className="text-xl font-black text-[#1D123B]">Sesi {activeBooking.status === 'confirmed' ? 'Di-ACC' : 'Pending'}</h2>
+                      
+                      <div className={`border rounded-xl p-4 mt-4 mb-2 flex items-start gap-3 text-left ${activeBooking.status === 'confirmed' ? 'bg-emerald-50 border-emerald-200' : 'bg-orange-50 border-orange-200'}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${activeBooking.status === 'confirmed' ? 'bg-emerald-100' : 'bg-orange-100'}`}>
+                          {activeBooking.status === 'confirmed' ? <CheckCircle2 className={`w-4 h-4 ${activeBooking.status === 'confirmed' ? 'text-emerald-600' : 'text-orange-600'}`} /> : <Clock className={`w-4 h-4 ${activeBooking.status === 'confirmed' ? 'text-emerald-600' : 'text-orange-600'}`} />}
+                        </div>
+                        <div>
+                          <p className={`text-sm font-bold ${activeBooking.status === 'confirmed' ? 'text-emerald-800' : 'text-orange-800'}`}>
+                            {activeBooking.status === 'confirmed' ? 'Sesi Terkonfirmasi (ACC)' : 'Menunggu Proses (Pending)'}
+                          </p>
+                          <p className={`text-xs mt-0.5 ${activeBooking.status === 'confirmed' ? 'text-emerald-600' : 'text-orange-600'}`}>
+                            {activeBooking.status === 'confirmed' ? 'Admin telah menyetujui jadwal konsultasi ini. Psikolog siap.' : 'Sesi kamu sedang diproses oleh admin. Silakan tunggu.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-600 leading-relaxed mt-2">
+                        Jadwal konsultasimu bersama <strong>{activeBooking.psychologistName}</strong> untuk waktu <strong>{activeBooking.timeSlot}</strong>.
+                      </p>
+                    </div>
+
+                    <div className="bg-purple-50/60 p-4 rounded-2xl border border-purple-100 text-left space-y-2 text-xs">
+                      <div className="flex justify-between border-b pb-1.5 border-purple-100">
+                        <span className="text-slate-500">Pasien:</span>
+                        <span className="font-bold text-slate-900">{activeBooking.patientName} ({activeBooking.patientAge} th)</span>
+                      </div>
+                      <div className="flex justify-between border-b pb-1.5 border-purple-100">
+                        <span className="text-slate-500">No. WhatsApp:</span>
+                        <span className="font-bold text-[#6C47FF]">{activeBooking.patientWhatsapp}</span>
+                      </div>
+                      <div className="flex justify-between border-b pb-1.5 border-purple-100">
+                        <span className="text-slate-500">Metode Sesi:</span>
+                        <span className="font-bold text-slate-900">{activeBooking.methodTitle || activeBooking.method}</span>
+                      </div>
+                      <div className="flex justify-between pt-1 font-bold">
+                        <span className="text-slate-600">Total Biaya:</span>
+                        <span className="text-[#6C47FF]">{formatRupiah(activeBooking.price)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Banner Promo */}
             <div className="rounded-3xl bg-gradient-to-r from-[#6C47FF] via-purple-600 to-[#5034D4] p-5 text-white shadow-md relative overflow-hidden">
               <div className="relative z-10 space-y-1.5">
@@ -645,18 +830,36 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
           </>
         )}
 
-        {/* Step 1: Form & Complete Payment Booking */}
+        {/* Step 1: Form & Payment OR Login Prompt */}
         {step === 1 && selectedPsikolog && (
-          <form onSubmit={handleCreateBooking} className="bg-white rounded-3xl p-4 sm:p-6 border border-purple-100 shadow-sm space-y-6">
-            <div className="flex items-center justify-between border-b border-purple-50 pb-3">
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setStep(0)}
-                  className="text-xs text-[#6C47FF] font-bold hover:underline mb-1 inline-block cursor-pointer"
-                >
-                  ← Kembali pilih psikolog lain
-                </button>
+          <div className="animate-fade-in max-w-2xl mx-auto space-y-4 sm:space-y-6 pb-20">
+            {isAuthLoading ? (
+               <div className="flex justify-center p-10"><div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div></div>
+            ) : !user ? (
+               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-purple-100 shadow-sm text-center space-y-6 my-10">
+                 <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto">
+                   <User className="w-8 h-8 text-purple-600" />
+                 </div>
+                 <div>
+                   <h2 className="text-xl font-bold text-[#1D123B]">Login untuk Melanjutkan</h2>
+                   <p className="text-sm text-slate-600 mt-2">Masuk dengan akun Google agar jadwal konsultasimu tersimpan aman dan kamu bisa memantau statusnya tanpa takut sesi ter-reset.</p>
+                 </div>
+                 <button onClick={handleLogin} type="button" className="w-full py-3.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 shadow-sm hover:bg-slate-50 flex items-center justify-center gap-3 cursor-pointer transition-all active:scale-[0.98]">
+                   <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+                   Lanjutkan dengan Google
+                 </button>
+               </div>
+            ) : (
+            <form onSubmit={handleCreateBooking} className="bg-white rounded-3xl p-4 sm:p-6 border border-purple-100 shadow-sm space-y-6">
+              <div className="flex items-center justify-between border-b border-purple-50 pb-3">
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setStep(0)}
+                    className="text-xs text-[#6C47FF] font-bold hover:underline mb-1 inline-block cursor-pointer"
+                  >
+                    ← Kembali pilih psikolog lain
+                  </button>
                 <h2 className="text-base sm:text-lg font-extrabold text-[#1D123B]">
                   Jadwalkan Konsultasi & Pembayaran
                 </h2>
@@ -1070,44 +1273,88 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
               </div>
             </div>
           </form>
+          )}
+          </div>
         )}
 
         {/* Step 2: Success Confirmation */}
         {step === 2 && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-purple-100 shadow-sm text-center space-y-5 animate-fade-in max-w-lg mx-auto my-6">
-            <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
-              <Check className="w-10 h-10 stroke-[3]" />
+            
+            {/* Download PDF Trigger Button (Fallback if auto download is blocked) */}
+            <div className="flex justify-end">
+              <button 
+                onClick={downloadReceiptPDF}
+                className="text-xs text-purple-600 hover:text-purple-800 font-bold flex items-center gap-1 cursor-pointer"
+              >
+                <FileCheck className="w-4 h-4" /> Download Struk PDF
+              </button>
             </div>
 
-            <div className="space-y-2">
-              <span className="px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black border border-emerald-300 inline-block">
-                Pendaftaran &amp; Bukti Transfer Terkirim
-              </span>
-              <h2 className="text-xl font-black text-[#1D123B]">Sesi Berhasil Dipesan!</h2>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Terima kasih! Jadwal konsultasimu bersama <strong>{selectedPsikolog?.name}</strong> untuk waktu <strong>{selectedTime}</strong> telah berhasil dicatat.
-              </p>
-            </div>
+            {/* The area to be captured for PDF */}
+            <div ref={receiptRef} className="bg-white p-2 rounded-xl space-y-5">
+              {/* Logo specifically for the PDF receipt */}
+              <div className="flex items-center justify-center gap-2 mb-4">
+                 {(getCmsConfig().branding.logoImage || APP_IMAGES.logoImage) && (
+                   <img 
+                     src={getCmsConfig().branding.logoImage || APP_IMAGES.logoImage} 
+                     alt="Sapa Hati Logo" 
+                     className="h-8" 
+                   />
+                 )}
+                 <span className="font-extrabold text-[#1D123B] text-xl tracking-tight">Sapa Hati</span>
+              </div>
 
-            {/* Summary details */}
-            <div className="bg-purple-50/60 p-4 rounded-2xl border border-purple-100 text-left space-y-2 text-xs">
-              <div className="flex justify-between border-b pb-1.5 border-purple-100">
-                <span className="text-slate-500">Pasien:</span>
-                <span className="font-bold text-slate-900">{patientName} ({patientAge} th)</span>
+              <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+                <Check className="w-10 h-10 stroke-[3]" />
               </div>
-              <div className="flex justify-between border-b pb-1.5 border-purple-100">
-                <span className="text-slate-500">No. WhatsApp:</span>
-                <span className="font-bold text-[#6C47FF]">{patientWhatsapp}</span>
-              </div>
-              <div className="flex justify-between border-b pb-1.5 border-purple-100">
-                <span className="text-slate-500">Metode Sesi:</span>
-                <span className="font-bold text-slate-900">
-                  {METHODS_CONFIG.find((m) => m.id === selectedMethod)?.title}
+
+              <div className="space-y-2">
+                <span className={`px-3.5 py-1 rounded-full text-xs font-black border inline-block ${currentCreatedStatus === 'confirmed' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-orange-100 text-orange-800 border-orange-300'}`}>
+                  {currentCreatedStatus === 'confirmed' ? 'Sesi Telah Dikonfirmasi' : 'Pendaftaran & Bukti Transfer Terkirim'}
                 </span>
+                <h2 className="text-xl font-black text-[#1D123B]">Sesi {currentCreatedStatus === 'confirmed' ? 'Di-ACC!' : 'Berhasil Dipesan!'}</h2>
+                
+                {/* Status Loading Menunggu Proses Admin atau Terkonfirmasi */}
+                <div className={`border rounded-xl p-4 mt-4 mb-2 flex items-start gap-3 text-left ${currentCreatedStatus === 'confirmed' ? 'bg-emerald-50 border-emerald-200' : 'bg-orange-50 border-orange-200'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${currentCreatedStatus === 'confirmed' ? 'bg-emerald-100' : 'bg-orange-100'}`}>
+                    {currentCreatedStatus === 'confirmed' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Clock className="w-4 h-4 text-orange-600 animate-pulse" />}
+                  </div>
+                  <div>
+                    <p className={`text-sm font-bold ${currentCreatedStatus === 'confirmed' ? 'text-emerald-800' : 'text-orange-800'}`}>
+                      {currentCreatedStatus === 'confirmed' ? 'Sesi Terkonfirmasi (ACC)' : 'Menunggu Proses (Pending)'}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${currentCreatedStatus === 'confirmed' ? 'text-emerald-600' : 'text-orange-600'}`}>
+                      {currentCreatedStatus === 'confirmed' ? 'Admin telah menyetujui jadwal konsultasi ini. Psikolog siap.' : 'Sesi kamu sedang diproses oleh admin. Silakan tunggu konfirmasi melalui WhatsApp.'}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Terima kasih! Jadwal konsultasimu bersama <strong>{selectedPsikolog?.name}</strong> untuk waktu <strong>{selectedTime}</strong> telah berhasil dicatat.
+                </p>
               </div>
-              <div className="flex justify-between pt-1 font-bold">
-                <span className="text-slate-600">Total Biaya:</span>
-                <span className="text-[#6C47FF]">{formatRupiah(currentPrice)}</span>
+
+              {/* Summary details */}
+              <div className="bg-purple-50/60 p-4 rounded-2xl border border-purple-100 text-left space-y-2 text-xs">
+                <div className="flex justify-between border-b pb-1.5 border-purple-100">
+                  <span className="text-slate-500">Pasien:</span>
+                  <span className="font-bold text-slate-900">{patientName} ({patientAge} th)</span>
+                </div>
+                <div className="flex justify-between border-b pb-1.5 border-purple-100">
+                  <span className="text-slate-500">No. WhatsApp:</span>
+                  <span className="font-bold text-[#6C47FF]">{patientWhatsapp}</span>
+                </div>
+                <div className="flex justify-between border-b pb-1.5 border-purple-100">
+                  <span className="text-slate-500">Metode Sesi:</span>
+                  <span className="font-bold text-slate-900">
+                    {METHODS_CONFIG.find((m) => m.id === selectedMethod)?.title}
+                  </span>
+                </div>
+                <div className="flex justify-between pt-1 font-bold">
+                  <span className="text-slate-600">Total Biaya:</span>
+                  <span className="text-[#6C47FF]">{formatRupiah(currentPrice)}</span>
+                </div>
               </div>
             </div>
 

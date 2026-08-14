@@ -319,7 +319,7 @@ export async function getBookingsFromSheet() {
 
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: config.spreadsheetId,
-      range: 'Bookings!A2:N1000',
+      range: 'Bookings!A2:P1000',
     });
 
     const rows = res.data.values || [];
@@ -338,6 +338,8 @@ export async function getBookingsFromSheet() {
       paymentReceiptUrl: row[11] || '',
       status: row[12] || 'pending',
       createdAt: row[13] || new Date().toISOString(),
+      userId: row[14] || undefined,
+      userEmail: row[15] || undefined,
     })).filter((b) => b.id);
   } catch (err) {
     console.warn('Fetch Bookings via Service Account Notice:', err);
@@ -356,7 +358,7 @@ export async function updateBookingsInSheet(bookings: any[]) {
   try {
     await sheets.spreadsheets.values.clear({
       spreadsheetId: config.spreadsheetId,
-      range: 'Bookings!A2:N2000',
+      range: 'Bookings!A2:P2000',
     });
   } catch (err) {
     console.warn('Notice clearing Bookings range:', err);
@@ -379,11 +381,13 @@ export async function updateBookingsInSheet(bookings: any[]) {
     b.paymentReceiptUrl || '',
     b.status,
     b.createdAt,
+    b.userId || '',
+    b.userEmail || '',
   ]);
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: config.spreadsheetId,
-    range: `Bookings!A2:N${rows.length + 1}`,
+    range: `Bookings!A2:P${rows.length + 1}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: rows },
   });

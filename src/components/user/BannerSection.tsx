@@ -3,6 +3,7 @@ import { ChevronRight, Lock, ShieldCheck, Heart } from 'lucide-react';
 import { getCmsConfig, subscribeCmsConfig } from '../../data/cmsStore';
 import { APP_IMAGES } from '../../data/appImages';
 import { TransparentImage } from '../common/TransparentImage';
+import { motion } from 'motion/react';
 
 interface BannerSectionProps {
   onStartCurhat?: () => void;
@@ -22,7 +23,13 @@ export const BannerSection: React.FC<BannerSectionProps> = ({
   const bannerImgSrc = kamuTidakSendiri.bannerImage || (kamuTidakSendiri.items && kamuTidakSendiri.items[0]?.image) || APP_IMAGES.bannerImage;
 
   return (
-    <section className="px-4 sm:px-6 lg:px-8 py-3 sm:py-5 max-w-6xl mx-auto">
+    <motion.section 
+      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+      whileInView={{ opacity: 1, scale: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="px-4 sm:px-6 lg:px-8 py-3 sm:py-5 max-w-6xl mx-auto"
+    >
       <div className="bg-gradient-to-b from-[#EFEBFF] via-[#E8E1FF] to-[#E2DAFF] rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-purple-100/80 shadow-2xs relative overflow-hidden">
         
         {/* Upper Content Area */}
@@ -96,6 +103,6 @@ export const BannerSection: React.FC<BannerSectionProps> = ({
         </div>
 
       </div>
-    </section>
+    </motion.section>
   );
 };

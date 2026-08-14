@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, User, Smile } from 'lucide-react';
 import { getCmsConfig, subscribeCmsConfig } from '../../data/cmsStore';
+import { motion } from 'motion/react';
 
 interface FeaturesSectionProps {
   onStartCurhat: () => void;
@@ -31,7 +32,13 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
   return (
     <section className="px-4 sm:px-6 lg:px-8 py-3 sm:py-6 max-w-6xl mx-auto">
       {/* Section Title */}
-      <div className="text-center mb-4 sm:mb-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.5 }}
+        className="text-center mb-4 sm:mb-6"
+      >
         <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold text-[#1D123B] tracking-tight">
           {kamiHadir.sectionTitle}
         </h2>
@@ -39,13 +46,17 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
           {kamiHadir.sectionSubtitle}
         </p>
         <div className="w-10 sm:w-12 h-1 bg-[#7A52F4] rounded-full mx-auto mt-2"></div>
-      </div>
+      </motion.div>
 
       {/* 3 Feature Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6">
         
         {/* Card 1: Curhat dengan AI */}
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
           onClick={onStartCurhat}
           className="bg-white hover:bg-purple-50/40 rounded-xl sm:rounded-3xl p-3.5 sm:p-7 border border-purple-100/80 shadow-2xs hover:shadow-md transition-all duration-300 cursor-pointer flex flex-row sm:flex-col items-center sm:items-center text-left sm:text-center gap-3.5 sm:gap-0 group relative overflow-hidden active:scale-[0.98]"
         >
@@ -69,10 +80,14 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
           </div>
 
           <div className="hidden sm:block w-12 h-1 bg-[#8B5CF6]/50 rounded-full mt-auto"></div>
-        </div>
+        </motion.div>
 
         {/* Card 2: Konsultasi Psikolog */}
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
           onClick={onOpenPsikolog}
           className="bg-white hover:bg-teal-50/40 rounded-xl sm:rounded-3xl p-3.5 sm:p-7 border border-teal-100/80 shadow-2xs hover:shadow-md transition-all duration-300 cursor-pointer flex flex-row sm:flex-col items-center sm:items-center text-left sm:text-center gap-3.5 sm:gap-0 group relative overflow-hidden active:scale-[0.98]"
         >
@@ -96,10 +111,14 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
           </div>
 
           <div className="hidden sm:block w-12 h-1 bg-[#0D9488]/50 rounded-full mt-auto"></div>
-        </div>
+        </motion.div>
 
         {/* Card 3: Kenali Dirimu */}
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
           onClick={onOpenMoodTracker}
           className="bg-white hover:bg-amber-50/40 rounded-xl sm:rounded-3xl p-3.5 sm:p-7 border border-amber-100/80 shadow-2xs hover:shadow-md transition-all duration-300 cursor-pointer flex flex-row sm:flex-col items-center sm:items-center text-left sm:text-center gap-3.5 sm:gap-0 group relative overflow-hidden active:scale-[0.98] sm:col-span-2 lg:col-span-1"
         >
@@ -123,7 +142,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
           </div>
 
           <div className="hidden sm:block w-12 h-1 bg-[#F59E0B]/50 rounded-full mt-auto"></div>
-        </div>
+        </motion.div>
 
       </div>
     </section>

@@ -1,20 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Header } from './components/user/Header';
 import { HeroSection } from './components/user/HeroSection';
 import { FeaturesSection } from './components/user/FeaturesSection';
 import { BannerSection } from './components/user/BannerSection';
 import { Footer } from './components/user/Footer';
-import { CurhatAiModal } from './components/user/CurhatAiModal';
-import { PsikologModal } from './components/psychologist/PsikologModal';
-import { MoodTrackerModal } from './components/user/MoodTrackerModal';
-import { NavigationDrawer } from './components/user/NavigationDrawer';
-import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
-import { PsikotesPage } from './pages/psikotes/PsikotesPage';
-import { PersonalityQuizPage } from './pages/quiz/PersonalityQuizPage';
-import { CurhatAiPage } from './pages/chat/CurhatAiPage';
-import { KonsultasiPsikologPage } from './pages/konsultasi/KonsultasiPsikologPage';
-import { MoodTrackerPage } from './pages/journal/MoodTrackerPage';
-import { DaftarMitraPage } from './pages/mitra/DaftarMitraPage';
+
+// Lazy Loaded Modals
+const CurhatAiModal = React.lazy(() => import('./components/user/CurhatAiModal').then(m => ({ default: m.CurhatAiModal })));
+const PsikologModal = React.lazy(() => import('./components/psychologist/PsikologModal').then(m => ({ default: m.PsikologModal })));
+const MoodTrackerModal = React.lazy(() => import('./components/user/MoodTrackerModal').then(m => ({ default: m.MoodTrackerModal })));
+const NavigationDrawer = React.lazy(() => import('./components/user/NavigationDrawer').then(m => ({ default: m.NavigationDrawer })));
+
+// Lazy Loaded Pages
+const AdminDashboardPage = React.lazy(() => import('./pages/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })));
+const PsikotesPage = React.lazy(() => import('./pages/psikotes/PsikotesPage').then(m => ({ default: m.PsikotesPage })));
+const PersonalityQuizPage = React.lazy(() => import('./pages/quiz/PersonalityQuizPage').then(m => ({ default: m.PersonalityQuizPage })));
+const CurhatAiPage = React.lazy(() => import('./pages/chat/CurhatAiPage').then(m => ({ default: m.CurhatAiPage })));
+const KonsultasiPsikologPage = React.lazy(() => import('./pages/konsultasi/KonsultasiPsikologPage').then(m => ({ default: m.KonsultasiPsikologPage })));
+const MoodTrackerPage = React.lazy(() => import('./pages/journal/MoodTrackerPage').then(m => ({ default: m.MoodTrackerPage })));
+const DaftarMitraPage = React.lazy(() => import('./pages/mitra/DaftarMitraPage').then(m => ({ default: m.DaftarMitraPage })));
 import { FlyingAirplane } from './components/user/FlyingAirplane';
 import { MobileHomeView } from './components/user/MobileHomeView';
 import { MobileBottomNav } from './components/user/MobileBottomNav';
@@ -167,95 +171,117 @@ export default function App() {
   const [isPsikologOpen, setIsPsikologOpen] = useState(false);
   const [isMoodTrackerOpen, setIsMoodTrackerOpen] = useState(false);
 
+  const SuspenseFallback = () => (
+    <div className="flex min-h-screen items-center justify-center bg-[#FAF8FF]">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9F8BE9]"></div>
+    </div>
+  );
+
   // IF ADMIN ROUTE -> RENDER STANDALONE ADMIN DASHBOARD PAGE
   if (route === 'admin') {
-    return <AdminDashboardPage onBackToMainApp={navigateToHome} />;
+    return (
+      <Suspense fallback={<SuspenseFallback />}>
+        <AdminDashboardPage onBackToMainApp={navigateToHome} />
+      </Suspense>
+    );
   }
 
   // IF PSIKOTES ROUTE -> RENDER STANDALONE PSIKOTES PAGE
   if (route === 'psikotes') {
     return (
-      <PsikotesPage
-        onBackToHome={navigateToHome}
-        onOpenDashboard={navigateToAdmin}
-        onOpenJournal={navigateToJournal}
-        onOpenMitra={navigateToMitra}
-        onStartCurhat={navigateToChat}
-        onOpenPsikolog={navigateToKonsultasi}
-      />
+      <Suspense fallback={<SuspenseFallback />}>
+        <PsikotesPage
+          onBackToHome={navigateToHome}
+          onOpenDashboard={navigateToAdmin}
+          onOpenJournal={navigateToJournal}
+          onOpenMitra={navigateToMitra}
+          onStartCurhat={navigateToChat}
+          onOpenPsikolog={navigateToKonsultasi}
+        />
+      </Suspense>
     );
   }
 
   // IF QUIZ ROUTE -> RENDER DEDICATED PERSONALITY QUIZ PAGE
   if (route === 'quiz') {
     return (
-      <PersonalityQuizPage
-        onBackToHome={navigateToHome}
-        onOpenDashboard={navigateToAdmin}
-        onOpenPsikotes={navigateToPsikotes}
-        onOpenJournal={navigateToJournal}
-        onOpenMitra={navigateToMitra}
-        onStartCurhat={navigateToChat}
-        onOpenPsikolog={navigateToKonsultasi}
-      />
+      <Suspense fallback={<SuspenseFallback />}>
+        <PersonalityQuizPage
+          onBackToHome={navigateToHome}
+          onOpenDashboard={navigateToAdmin}
+          onOpenPsikotes={navigateToPsikotes}
+          onOpenJournal={navigateToJournal}
+          onOpenMitra={navigateToMitra}
+          onStartCurhat={navigateToChat}
+          onOpenPsikolog={navigateToKonsultasi}
+        />
+      </Suspense>
     );
   }
 
   // IF CHAT ROUTE -> RENDER DEDICATED AI CHAT PAGE
   if (route === 'chat') {
     return (
-      <CurhatAiPage
-        onBackToHome={navigateToHome}
-        onOpenPsikolog={navigateToKonsultasi}
-        onOpenPsikotes={navigateToPsikotes}
-        onOpenDashboard={navigateToAdmin}
-        onOpenJournal={navigateToJournal}
-        onOpenMitra={navigateToMitra}
-      />
+      <Suspense fallback={<SuspenseFallback />}>
+        <CurhatAiPage
+          onBackToHome={navigateToHome}
+          onOpenPsikolog={navigateToKonsultasi}
+          onOpenPsikotes={navigateToPsikotes}
+          onOpenDashboard={navigateToAdmin}
+          onOpenJournal={navigateToJournal}
+          onOpenMitra={navigateToMitra}
+        />
+      </Suspense>
     );
   }
 
   // IF KONSULTASI ROUTE -> RENDER DEDICATED PSYCHOLOGIST CONSULTATION PAGE
   if (route === 'konsultasi') {
     return (
-      <KonsultasiPsikologPage
-        onBackToHome={navigateToHome}
-        onOpenPsikotes={navigateToPsikotes}
-        onStartCurhat={navigateToChat}
-        onOpenDashboard={navigateToAdmin}
-        onOpenJournal={navigateToJournal}
-        onOpenMitra={navigateToMitra}
-      />
+      <Suspense fallback={<SuspenseFallback />}>
+        <KonsultasiPsikologPage
+          onBackToHome={navigateToHome}
+          onOpenPsikotes={navigateToPsikotes}
+          onStartCurhat={navigateToChat}
+          onOpenDashboard={navigateToAdmin}
+          onOpenJournal={navigateToJournal}
+          onOpenMitra={navigateToMitra}
+        />
+      </Suspense>
     );
   }
 
   // IF JOURNAL ROUTE -> RENDER DEDICATED MOOD TRACKER & JOURNAL PAGE
   if (route === 'journal') {
     return (
-      <MoodTrackerPage
-        onBackToHome={navigateToHome}
-        onOpenPsikolog={navigateToKonsultasi}
-        onOpenPsikotes={navigateToPsikotes}
-        onStartCurhat={navigateToChat}
-        onOpenDashboard={navigateToAdmin}
-        onOpenJournal={navigateToJournal}
-        onOpenMitra={navigateToMitra}
-      />
+      <Suspense fallback={<SuspenseFallback />}>
+        <MoodTrackerPage
+          onBackToHome={navigateToHome}
+          onOpenPsikolog={navigateToKonsultasi}
+          onOpenPsikotes={navigateToPsikotes}
+          onStartCurhat={navigateToChat}
+          onOpenDashboard={navigateToAdmin}
+          onOpenJournal={navigateToJournal}
+          onOpenMitra={navigateToMitra}
+        />
+      </Suspense>
     );
   }
 
   // IF MITRA ROUTE -> RENDER DEDICATED DAFTAR MITRA PAGE
   if (route === 'mitra') {
     return (
-      <DaftarMitraPage
-        onBackToHome={navigateToHome}
-        onOpenPsikolog={navigateToKonsultasi}
-        onOpenPsikotes={navigateToPsikotes}
-        onStartCurhat={navigateToChat}
-        onOpenDashboard={navigateToAdmin}
-        onOpenJournal={navigateToJournal}
-        onOpenMitra={navigateToMitra}
-      />
+      <Suspense fallback={<SuspenseFallback />}>
+        <DaftarMitraPage
+          onBackToHome={navigateToHome}
+          onOpenPsikolog={navigateToKonsultasi}
+          onOpenPsikotes={navigateToPsikotes}
+          onStartCurhat={navigateToChat}
+          onOpenDashboard={navigateToAdmin}
+          onOpenJournal={navigateToJournal}
+          onOpenMitra={navigateToMitra}
+        />
+      </Suspense>
     );
   }
 
@@ -336,34 +362,44 @@ export default function App() {
       />
 
       {/* Modals & Drawers */}
-      <CurhatAiModal
-        isOpen={isCurhatAiOpen}
-        onClose={() => setIsCurhatAiOpen(false)}
-        onOpenPsikolog={navigateToKonsultasi}
-        botAvatar={cmsConfig.branding.botAvatar}
-      />
+      <Suspense fallback={null}>
+        {isCurhatAiOpen && (
+          <CurhatAiModal
+            isOpen={isCurhatAiOpen}
+            onClose={() => setIsCurhatAiOpen(false)}
+            onOpenPsikolog={navigateToKonsultasi}
+            botAvatar={cmsConfig.branding.botAvatar}
+          />
+        )}
 
-      <PsikologModal
-        isOpen={isPsikologOpen}
-        onClose={() => setIsPsikologOpen(false)}
-      />
+        {isPsikologOpen && (
+          <PsikologModal
+            isOpen={isPsikologOpen}
+            onClose={() => setIsPsikologOpen(false)}
+          />
+        )}
 
-      <MoodTrackerModal
-        isOpen={isMoodTrackerOpen}
-        onClose={() => setIsMoodTrackerOpen(false)}
-      />
+        {isMoodTrackerOpen && (
+          <MoodTrackerModal
+            isOpen={isMoodTrackerOpen}
+            onClose={() => setIsMoodTrackerOpen(false)}
+          />
+        )}
 
-      <NavigationDrawer
-        isOpen={isNavOpen}
-        onClose={() => setIsNavOpen(false)}
-        onStartCurhat={navigateToChat}
-        onOpenPsikolog={navigateToKonsultasi}
-        onOpenMoodTracker={() => setIsMoodTrackerOpen(true)}
-        onOpenJournal={navigateToJournal}
-        onOpenMitra={navigateToMitra}
-        onOpenPsikotes={navigateToPsikotes}
-        onGoHome={navigateToHome}
-      />
+        {isNavOpen && (
+          <NavigationDrawer
+            isOpen={isNavOpen}
+            onClose={() => setIsNavOpen(false)}
+            onStartCurhat={navigateToChat}
+            onOpenPsikolog={navigateToKonsultasi}
+            onOpenMoodTracker={() => setIsMoodTrackerOpen(true)}
+            onOpenJournal={navigateToJournal}
+            onOpenMitra={navigateToMitra}
+            onOpenPsikotes={navigateToPsikotes}
+            onGoHome={navigateToHome}
+          />
+        )}
+      </Suspense>
 
     </div>
   );

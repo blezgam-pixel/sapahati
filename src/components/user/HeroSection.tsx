@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ShieldCheck, User } from 'lucide-react';
 import { getCmsConfig, subscribeCmsConfig } from '../../data/cmsStore';
 import { TransparentImage } from '../common/TransparentImage';
+import { motion } from 'motion/react';
 
 interface HeroSectionProps {
   onStartCurhat?: () => void;
@@ -19,7 +20,13 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
   const hero = cms.hero;
 
   return (
-    <section className="px-4 sm:px-6 lg:px-8 py-2 sm:py-5 max-w-6xl mx-auto transition-all">
+    <motion.section 
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="px-4 sm:px-6 lg:px-8 py-2 sm:py-5 max-w-6xl mx-auto transition-all"
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 lg:gap-12 items-center">
         
         {/* Left Column: Headline, Subtitle & Badges */}
@@ -72,6 +79,6 @@ export const HeroSection: React.FC<HeroSectionProps> = () => {
         )}
 
       </div>
-    </section>
+    </motion.section>
   );
 };

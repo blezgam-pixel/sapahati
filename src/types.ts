@@ -64,6 +64,8 @@ export interface BookingSession {
   paymentReceiptName?: string;
   paymentReceiptUrl?: string;
   status: BookingStatus;
+  userId?: string;
+  userEmail?: string;
   createdAt: string;
 }
 
