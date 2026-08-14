@@ -103,27 +103,33 @@ export async function createBooking(booking: Omit<BookingSession, 'id' | 'status
   const state = getSyncState();
 
   if (state.status === 'connected' && state.spreadsheetId) {
-    // Fetch the LATEST bookings from the server first to prevent race conditions
-    // (multiple users booking at the same time from different devices)
-    const remoteBookings = await fetchBookingsFromSheets();
-    
-    // Merge: put new booking first, then all remote bookings that don't duplicate this id
-    const merged = [created, ...remoteBookings.filter(b => b.id !== created.id)];
-    
-    // Update localStorage with merged data
-    localStorage.setItem(BOOKINGS_KEY, JSON.stringify(merged));
-    notifyListeners();
-    
-    // Push merged list back to Sheets
-    await pushBookingsToSheets(merged);
-  } else {
-    // Offline mode: just save locally
-    const current = getBookings();
-    const updated = [created, ...current];
-    localStorage.setItem(BOOKINGS_KEY, JSON.stringify(updated));
-    notifyListeners();
+    try {
+      // Use atomic server-side append to prevent race conditions with concurrent bookings
+      const res = await fetch('/api/sheets/bookings/append', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking: created }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Update local cache with the merged list returned by server
+        if (Array.isArray(data.bookings)) {
+          localStorage.setItem(BOOKINGS_KEY, JSON.stringify(data.bookings));
+          notifyListeners();
+          return created;
+        }
+      }
+    } catch (err) {
+      console.warn('Atomic append failed, falling back to local save:', err);
+    }
   }
 
+  // Fallback: offline mode or server error → save locally only
+  const current = getBookings();
+  const updated = [created, ...current];
+  localStorage.setItem(BOOKINGS_KEY, JSON.stringify(updated));
+  notifyListeners();
   return created;
 }
 

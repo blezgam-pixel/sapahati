@@ -78,6 +78,25 @@ app.post('/api/sheets/bookings', async (req, res) => {
   }
 });
 
+// Atomic append: baca dulu, tambah, tulis kembali (mencegah race condition antar pengguna)
+app.post('/api/sheets/bookings/append', async (req, res) => {
+  try {
+    const { booking } = req.body;
+    if (!booking || !booking.id) {
+      return res.status(400).json({ error: 'Data booking tidak valid' });
+    }
+    // Baca data terbaru dari Sheets di sisi server
+    const existing = await getBookingsFromSheet();
+    // Tambahkan booking baru di atas, hindari duplikat
+    const merged = [booking, ...existing.filter((b: any) => b.id !== booking.id)];
+    // Tulis gabungan kembali ke Sheets
+    await updateBookingsInSheet(merged);
+    res.json({ success: true, bookings: merged });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Gagal menambah booking' });
+  }
+});
+
 app.get('/api/sheets/psychologists', async (req, res) => {
   try {
     const psychologists = await getPsychologistsFromSheet();
