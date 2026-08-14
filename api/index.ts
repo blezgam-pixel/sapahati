@@ -208,7 +208,12 @@ app.post('/api/curhat', async (req, res) => {
         fallbackText = generalReplies[(currentTurn - 1) % generalReplies.length];
       }
 
-      return res.json({ reply: fallbackText, turn: currentTurn });
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.write(`data: ${JSON.stringify({ text: fallbackText })}\n\n`);
+      res.write('data: [DONE]\n\n');
+      return res.end();
     }
 
     const ai = new GoogleGenAI({
@@ -219,7 +224,7 @@ app.post('/api/curhat', async (req, res) => {
         },
       },
     });
-
+    
     // Format conversation history for context
     let formattedHistory = '';
     if (Array.isArray(history) && history.length > 0) {
@@ -228,24 +233,42 @@ app.post('/api/curhat', async (req, res) => {
         .join('\n');
     }
 
-    let turnInstruction = `ATURAN UTAMA KEPRIBADIAN & GAYA BAHASA (ALA GEN Z BESTIE HANGAT):
-1. PERSONALITAS: Kamu adalah "Sesi Curhat" — bestie paling peka, ramah, super empati, humble, dan tempat aman buat cerita tanpa di-judge sama sekali (zero judgment zone).
-2. GAYA BAHASA GEN Z CASUAL & EKSPRESIF:
-   - Gunakan kata sapaan & bahasa gaul halus Indonesia khas Gen Z (contoh: 'aku' & 'kamu', 'bestie', 'i feel you bgt', 'real bgt sih', 'spill aja', 'valid bgt', 'take your time', 'relate bgt', 'overthinking', 'pukpuk 🫂', 'proud of you', 'sending warm virtual hug 🫂', 'slowly but surely').
-   - Sisipkan 1-2 emoji hangat yang bervariasi (💜, 🫂, ✨, 🥹, 🫶, 🌸, 🌿) di posisi yang tepat.
-3. HINDARI REPETISI & SIFAT MONOTON (SANGAT PENTING):
-   - JANGAN PERNAH mengulang-ulang kalimat pembuka yang sama persis seperti "Sini aku peluk dulu" atau "Wajar banget kok" di setiap pesan. Variasikan pembukamu secara kreatif dan segar sesuai konteks!
-   - Pahami seluruh riwayat percakapan sebelumnya. HINDARI MENANYAKAN ULANG hal yang sudah dijelaskan pengguna! (Misal jika pengguna sudah bilang capek tugas, jangan tanya lagi "kenapa capek?").
-4. ANKORING KONTEKS & EMOSI:
-   - Langsung tanggapi poin spesifik & emosi yang disampaikan pengguna dengan sudut pandang teman yang beneran paham & peduli.
-   - Jika pengguna cuma curhat emosi/perasaan, fokus berikan rasa aman, validasi emosi, dan ketenangan (tidak wajib mengakhiri dengan pertanyaan).
-5. PANJANG RESPONS: 2-3 kalimat yang natural, mengalir santai, dan hangat (bukan seperti balasan bot template). (Ini respons ke-${currentTurn} dari 5).`;
-
-    if (currentTurn >= 5) {
-      turnInstruction = `Ini pesan ke-5 (SESI TERAKHIR dari 5 pertanyaan). Jawab dengan gaya Gen Z bestie yang super hangat, manis, dan menguatkan bgt! Apresiasi keberaniannya cerita ("You did so well today, proud of you bgt! Makasih yaa udah mau terbuka bgt ke aku 💜✨"), sampaikan secara sangat lembut kalau sesi AI 5 pertanyaan ini udah selesai, lalu beri ajakan hangat untuk lanjut ngobrol bareng Psikolog Profesional biar dapet pendampingan yang lebih dalam, tepat, & lega bgt!`;
+    const fullContextText = (history.map((m: any) => m.text).join(' ') + ' ' + prompt).toLowerCase();
+    const isSarcasticTopic = ['kerja', 'karir', 'capek', 'tugas', 'percinta', 'cinta', 'pacar', 'putus', 'pustus', 'sosial', 'temen', 'teman', 'toxic', 'hubunga', 'mantan', 'jomblo'].some(kw => fullContextText.includes(kw));
+    const isGenZTopic = ['nikah', 'pernikahan', 'mental', 'iq', 'pintar', 'bodoh', 'stres', 'depresi', 'insecure'].some(kw => fullContextText.includes(kw));
+    
+    let personaType = 'gen_z'; // default
+    if (isSarcasticTopic && !isGenZTopic) {
+      personaType = 'sarcastic';
+    } else if (isGenZTopic) {
+      personaType = 'gen_z';
     }
 
-    const systemPrompt = `Kamu adalah Sesi Curhat — sahabat dekat, teman cerita, dan pendengar setia yang super friendly, hangat, humble, dan empati banget. Kamu selalu mendengarkan dengan peka tanpa menghakimi, dan SELALU INGAT konteks percakapan sebelumnya.
+    let turnInstruction = '';
+    let systemRole = '';
+
+    if (personaType === 'sarcastic') {
+      systemRole = `PERSONALITAS: Kamu adalah "Sesi Curhat" — AI cerdas, blak-blakan, agak sarkas tapi peduli. Berikan "tough love" (nasihat pedas tapi sayang). Kamu tidak terlalu suka basa-basi manis.`;
+      turnInstruction = `ATURAN KHUSUS (SARKAS TAPI PEDULI):
+1. Gaya bahasa Indonesia santai, blak-blakan, agak pedas tapi logis. Jangan terlalu manis.
+2. Beri solusi praktis yang menampar agar pengguna sadar.
+3. JANGAN mengulang-ulang pembuka "Wajar banget". Kasih tanggapan to the point.
+4. Panjang respons: 2-3 kalimat.`;
+    } else {
+      systemRole = `PERSONALITAS: Kamu adalah "Sesi Curhat" — bestie paling peka, ramah, super empati, humble, dan tempat aman buat cerita tanpa di-judge sama sekali.`;
+      turnInstruction = `ATURAN UTAMA KEPRIBADIAN & GAYA BAHASA (ALA GEN Z BESTIE HANGAT):
+1. GAYA BAHASA: Kasual & ekspresif ala Gen Z (contoh: 'bestie', 'i feel you bgt', 'take your time').
+2. Sisipkan emoji hangat (💜, 🫂, ✨).
+3. HINDARI REPETISI pembuka yang sama persis.
+4. PANJANG RESPONS: 2-3 kalimat.`;
+    }
+
+    if (currentTurn >= 5) {
+      turnInstruction = `Ini pesan ke-5 (SESI TERAKHIR). Apresiasi keberaniannya cerita, sampaikan secara lembut kalau sesi AI 5 pertanyaan ini udah selesai, lalu ajak ngobrol bareng Psikolog Profesional biar dapet pendampingan yang lebih dalam!`;
+    }
+
+    const systemPrompt = `${systemRole}
+Kamu SELALU INGAT konteks percakapan sebelumnya.
 
 ${turnInstruction}
 
@@ -253,10 +276,14 @@ ${formattedHistory ? `[RIWAYAT PERCAKAPAN SEBELUMNYA]:\n${formattedHistory}\n` :
 [PESAN TERBARU PENGGUNA]:
 ${prompt}`;
 
-    let response;
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    let stream;
     try {
-      response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+      stream = await ai.models.generateContentStream({
+        model: 'gemini-2.5-flash',
         contents: [
           {
             role: 'user',
@@ -265,9 +292,9 @@ ${prompt}`;
         ]
       });
     } catch (modelErr) {
-      console.warn('Primary model gemini-3.6-flash failed, trying fallback model gemini-3.1-flash-lite...', modelErr);
-      response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite',
+      console.warn('Primary model gemini-2.5-flash failed, trying fallback model gemini-1.5-flash...', modelErr);
+      stream = await ai.models.generateContentStream({
+        model: 'gemini-1.5-flash',
         contents: [
           {
             role: 'user',
@@ -277,14 +304,23 @@ ${prompt}`;
       });
     }
 
-    const reply = response.text || `Makasih yaa udah mau cerita ke aku. Aku selalu di sini siap dengerin kamu kapan aja 💜`;
-    return res.json({ reply });
+    for await (const chunk of stream) {
+      if (chunk.text) {
+        res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
+      }
+    }
+    
+    res.write('data: [DONE]\n\n');
+    return res.end();
 
   } catch (error) {
     console.error('Curhat API Error:', error);
-    return res.json({
-      reply: 'Makasih yaa udah mau cerita ke aku 💜. Aku paham bgt perasaanmu saat ini valid banget. Pelan-pelan aja yaa, kamu gak sendirian kok.'
-    });
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.write(`data: ${JSON.stringify({ text: 'Makasih yaa udah mau cerita ke aku 💜. Aku paham bgt perasaanmu saat ini valid banget. Pelan-pelan aja yaa, kamu gak sendirian kok.' })}\n\n`);
+    res.write('data: [DONE]\n\n');
+    return res.end();
   }
 });
 
