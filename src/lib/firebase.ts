@@ -1,11 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
-const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
 const firebaseConfig = {
   apiKey: "AIzaSyAHKJbF6-S76TFYCZTMZkd0GMa0JJeReeY",
-  authDomain: isLocalhost ? "sapahati-app.firebaseapp.com" : "sapahati.vercel.app",
+  authDomain: "sapahati-app.firebaseapp.com",
   projectId: "sapahati-app",
   storageBucket: "sapahati-app.firebasestorage.app",
   messagingSenderId: "113416393039",
@@ -17,4 +15,6 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase Authentication and get a reference to the service
 export const auth = getAuth(app);
+
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });

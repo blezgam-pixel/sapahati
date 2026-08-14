@@ -225,23 +225,31 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
 
   const handleLogin = async () => {
     try {
-      // Save current state so user doesn't lose it when page reloads after redirect
-      const draft = {
-        psychId: selectedPsikolog?.id,
-        method: selectedMethod,
-        time: selectedTime,
-        patientName,
-        patientAge,
-        patientWhatsapp,
-        step: 1
-      };
-      sessionStorage.setItem('sapahati_booking_draft', JSON.stringify(draft));
-      
-      // Use redirect instead of popup to fix in-app browser and Safari mobile issues
-      await signInWithRedirect(auth, googleProvider);
+      // signInWithPopup is most compatible with standard Firebase authDomain
+      await signInWithPopup(auth, googleProvider);
     } catch (error: any) {
       console.error('Login failed', error);
-      alert('Login gagal. Jika kamu menggunakan Vercel, pastikan domain "sapahati.vercel.app" sudah ditambahkan ke daftar "Authorized Domains" di menu Authentication Firebase Console kamu. (' + error.message + ')');
+      // If popup was blocked (common on mobile), fall back to redirect
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+        try {
+          // Save draft before redirect so user doesn't lose their selection
+          const draft = {
+            psychId: selectedPsikolog?.id,
+            method: selectedMethod,
+            time: selectedTime,
+            patientName,
+            patientAge,
+            patientWhatsapp,
+          };
+          sessionStorage.setItem('sapahati_booking_draft', JSON.stringify(draft));
+          await signInWithRedirect(auth, googleProvider);
+        } catch (redirectError: any) {
+          console.error('Redirect login also failed', redirectError);
+          alert('Login gagal. Pastikan domain "sapahati.vercel.app" sudah ada di Authorized Domains di Firebase Console.');
+        }
+      } else {
+        alert('Login gagal: ' + error.message);
+      }
     }
   };
 
