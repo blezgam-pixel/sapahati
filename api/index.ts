@@ -322,8 +322,7 @@ ${prompt}`;
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-    const errMsg = error.message || String(error);
-    res.write(`data: ${JSON.stringify({ text: `Maaf ya, sistem AI lagi ada kendala teknis sedikit di server 😭 (${errMsg}). Coba sapa aku lagi yaa!` })}\n\n`);
+    res.write(`data: ${JSON.stringify({ text: 'Sapa hati sedang tidur, harap menunggu bangun 😴' })}\n\n`);
     res.write('data: [DONE]\n\n');
     return res.end();
   }

@@ -27,7 +27,7 @@ import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 import { APP_IMAGES } from '../../data/appImages';
 import { auth, googleProvider } from '../../lib/firebase';
-import { signInWithPopup, signInWithRedirect, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { getCmsConfig } from '../../data/cmsStore';
 import { 
   getPsychologists, 
@@ -178,6 +178,14 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
     const unsubscribe = subscribeStore(() => {
       setPsychologists(getPsychologists());
       setBookings(getBookings());
+    });
+
+    // Check for redirect result to finalize login on mobile browsers
+    getRedirectResult(auth).catch((error) => {
+      console.error('Redirect login error:', error);
+      if (error.code === 'auth/unauthorized-domain') {
+         alert('Gagal memverifikasi login. Pastikan domain sudah diizinkan di Firebase.');
+      }
     });
 
     const authUnsubscribe = onAuthStateChanged(auth, (currentUser) => {

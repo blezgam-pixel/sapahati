@@ -152,12 +152,10 @@ export const CurhatAiModal: React.FC<CurhatAiModalProps> = ({ isOpen, onClose, o
       }
     } catch {
       setTimeout(() => {
-        const replyText = getGenZFallbackReply(nextTurn, text);
-
         const aiMsg: ChatMessage = {
           id: (Date.now() + 1).toString(),
           sender: 'ai',
-          text: replyText,
+          text: 'Sapa hati sedang tidur, harap menunggu bangun 😴',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
         setMessages((prev) => [...prev, aiMsg]);

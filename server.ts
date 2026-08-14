@@ -324,14 +324,12 @@ ${prompt}`;
     res.write('data: [DONE]\n\n');
     return res.end();
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Curhat API Error:', error);
-    if (!res.headersSent) {
-      res.setHeader('Content-Type', 'text/event-stream');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Connection', 'keep-alive');
-    }
-    res.write(`data: ${JSON.stringify({ text: 'Makasih yaa udah mau cerita ke aku 💜. Aku paham bgt perasaanmu saat ini valid banget. Pelan-pelan aja yaa, kamu gak sendirian kok.' })}\n\n`);
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.write(`data: ${JSON.stringify({ text: 'Sapa hati sedang tidur, harap menunggu bangun 😴' })}\n\n`);
     res.write('data: [DONE]\n\n');
     return res.end();
   }
