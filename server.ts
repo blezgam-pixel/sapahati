@@ -17,6 +17,7 @@ import {
   updateAdminUsersInSheet,
   verifyAdminLoginInSheet,
 } from './server/sheetsService.js';
+import { startTelegramBot, sendTelegramBookingNotification, sendTelegramMessage } from './server/telegramBotService.js';
 
 const app = express();
 const PORT = 3000;
@@ -441,6 +442,36 @@ ${prompt}`;
   }
 });
 
+// ----------------------------------------------------
+// TELEGRAM NOTIFICATION ENDPOINT
+// ----------------------------------------------------
+app.post('/api/telegram/notify', async (req, res) => {
+  try {
+    const { booking, message } = req.body;
+
+    if (booking && booking.id) {
+      const result = await sendTelegramBookingNotification(booking);
+      if (!result || !result.ok) {
+        throw new Error(result?.description || 'Gagal mengirim notifikasi booking ke Telegram');
+      }
+      return res.json({ success: true, result });
+    }
+
+    if (message) {
+      const result = await sendTelegramMessage(message);
+      if (!result || !result.ok) {
+        throw new Error(result?.description || 'Gagal mengirim pesan ke Telegram');
+      }
+      return res.json({ success: true, result });
+    }
+
+    return res.status(400).json({ error: 'Data booking atau message diperlukan' });
+  } catch (err: any) {
+    console.error('[Telegram] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Vite middleware setup for development vs production
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
@@ -460,6 +491,8 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Sapahati server running on http://0.0.0.0:${PORT}`);
+    // Start Telegram Bot polling service
+    startTelegramBot();
   });
 }
 

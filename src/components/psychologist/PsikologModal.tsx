@@ -23,6 +23,8 @@ import {
 import { Psychologist, ConsultationMethod, BookingSession } from '../../types';
 import { getPsychologists, getBookings, createBooking, subscribeStore } from '../../data/psychologistStore';
 import { getPsychologistInitials } from '../../utils/initials';
+import { getLoggedInUser } from '../../data/authStore';
+import { sendTelegramNotification } from '../../services/telegramService';
 
 interface PsikologModalProps {
   isOpen: boolean;
@@ -299,6 +301,10 @@ export const PsikologModal: React.FC<PsikologModalProps> = ({ isOpen, onClose })
 
     setIsSubmitting(true);
     try {
+      // Ambil data user yang sedang login
+      const user = getLoggedInUser();
+      const userEmail = user?.email || '';
+
       const created = await createBooking({
         patientName,
         patientAge: Number(patientAge),
@@ -306,13 +312,23 @@ export const PsikologModal: React.FC<PsikologModalProps> = ({ isOpen, onClose })
         psychologistId: selectedPsikolog.id,
         psychologistName: selectedPsikolog.name,
         method: selectedMethod,
-        methodTitle,
+        methodTitle: METHODS_CONFIG.find((m) => m.id === selectedMethod)?.title || 'Konsultasi',
         timeSlot: selectedTime,
-        price,
+        price: selectedPsikolog.prices[selectedMethod],
         paymentReceiptName: receiptFileName || 'Bukti_Transfer_QRIS.jpg',
         paymentReceiptUrl: receiptDataUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=300&auto=format&fit=crop&q=80',
+        userId: user?.id,
+        userEmail: userEmail,
       });
       setCreatedBookingId(created.id);
+
+      // --- KIRIM NOTIFIKASI TELEGRAM KE ADMIN ---
+      console.log('[PsikologModal] Mengirim notifikasi Telegram ke admin...');
+      sendTelegramNotification(created)
+        .then((ok) => console.log('[PsikologModal] ✅ Hasil kirim Telegram admin:', ok))
+        .catch((err) => console.error('[PsikologModal] ❌ Error kirim Telegram admin:', err));
+      // ----------------------------------------
+
       setStep(2);
     } catch (err) {
       console.error('Failed to create booking', err);

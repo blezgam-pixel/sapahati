@@ -51,6 +51,7 @@ export interface CmsConfig {
     brandSubtitle: string;
     contactWhatsapp: string;
     contactEmail: string;
+    adminNotificationEmail: string;
     botAvatar: string;
   };
   sponsors: SponsorItem[];
@@ -115,6 +116,7 @@ const DEFAULT_CMS_CONFIG: CmsConfig = {
     brandSubtitle: '',
     contactWhatsapp: '',
     contactEmail: '',
+    adminNotificationEmail: 'blezgam@gmail.com',
     botAvatar: APP_IMAGES.botAvatar,
   },
   sponsors: [],
@@ -191,6 +193,7 @@ function sanitizeCmsConfig(config: CmsConfig): CmsConfig {
       ...config.branding,
       logoImage: fixSvgDataUri(config.branding?.logoImage || ''),
       appIcon: fixSvgDataUri(config.branding?.appIcon || ''),
+      adminNotificationEmail: config.branding?.adminNotificationEmail || 'blezgam@gmail.com',
       botAvatar: fixSvgDataUri(config.branding?.botAvatar || APP_IMAGES.botAvatar),
     },
     hero: {
@@ -387,6 +390,7 @@ export function exportCmsConfigRows(customConfig?: CmsConfig): string[][] {
     ['Branding', 'brandSubtitle', config.branding.brandSubtitle],
     ['Branding', 'contactWhatsapp', config.branding.contactWhatsapp],
     ['Branding', 'contactEmail', config.branding.contactEmail],
+    ['Branding', 'adminNotificationEmail', config.branding.adminNotificationEmail],
     ['Branding', 'logoImage', config.branding.logoImage],
     ['Branding', 'appIcon', config.branding.appIcon],
     ['Branding', 'botAvatar', config.branding.botAvatar || APP_IMAGES.botAvatar],

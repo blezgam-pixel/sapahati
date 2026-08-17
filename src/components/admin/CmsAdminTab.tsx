@@ -566,6 +566,29 @@ export const CmsAdminTab: React.FC = () => {
               />
             </div>
 
+            {/* Admin Notification Email */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <MessageCircle className="w-4 h-4 text-[#6C47FF]" />
+                <span>Email Notifikasi Admin (EmailJS)</span>
+              </label>
+              <input
+                type="email"
+                value={config.branding.adminNotificationEmail || ''}
+                onChange={(e) =>
+                  setConfig({
+                    ...config,
+                    branding: { ...config.branding, adminNotificationEmail: e.target.value },
+                  })
+                }
+                placeholder="email.admin@contoh.com"
+                className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-purple-500 font-mono"
+              />
+              <p className="text-[11px] text-slate-500 font-medium">
+                Email ini akan menerima notifikasi setiap kali ada pengguna yang membuat pesanan baru.
+              </p>
+            </div>
+
           </div>
         </div>
       )}

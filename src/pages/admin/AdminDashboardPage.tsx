@@ -158,8 +158,24 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
   } | null>(null);
 
   // Status Handlers
-  const handleUpdateStatus = (bookingId: string, status: 'confirmed' | 'cancelled' | 'completed') => {
+  const handleUpdateStatus = async (bookingId: string, status: 'confirmed' | 'cancelled' | 'completed') => {
     updateBookingStatus(bookingId, status);
+
+    // --- KIRIM EMAIL NOTIFIKASI STATUS KE USER ---
+    try {
+      // Dapatkan data booking terbaru
+      const targetBooking = bookings.find((b) => b.id === bookingId) || getBookings().find((b) => b.id === bookingId);
+      if (targetBooking) {
+        const { sendOrderStatusToUser } = await import('../../services/emailService');
+        // Gunakan email user jika ada, jika tidak, mungkin mereka belum memasukkan email (bisa diganti dengan fallback)
+        const userEmail = targetBooking.userEmail || '';
+        if (userEmail) {
+          await sendOrderStatusToUser(targetBooking, status, userEmail);
+        }
+      }
+    } catch (err) {
+      console.error('Gagal mengirim email status ke user:', err);
+    }
   };
 
   const handleDeleteSingleBooking = (bookingId: string, patientName: string) => {

@@ -41,6 +41,7 @@ import { Header } from '../../components/user/Header';
 import { MobileHeader } from '../../components/user/MobileHeader';
 import { MobileBottomNav } from '../../components/user/MobileBottomNav';
 import { NavigationDrawer } from '../../components/user/NavigationDrawer';
+import { sendTelegramNotification } from '../../services/telegramService';
 
 interface KonsultasiPsikologPageProps {
   onBackToHome: () => void;
@@ -453,6 +454,14 @@ export const KonsultasiPsikologPage: React.FC<KonsultasiPsikologPageProps> = ({
       });
 
       setCreatedBookingId(created.id);
+
+      // --- KIRIM NOTIFIKASI TELEGRAM KE ADMIN ---
+      console.log('[KonsultasiPsikologPage] Mengirim notifikasi Telegram ke admin...');
+      sendTelegramNotification(created)
+        .then((ok) => console.log('[KonsultasiPsikologPage] ✅ Hasil kirim Telegram admin:', ok))
+        .catch((err) => console.error('[KonsultasiPsikologPage] ❌ Error kirim Telegram admin:', err));
+      // ------------------------------------------
+
       setStep(2);
     } catch (err) {
       console.error('Failed to create booking', err);

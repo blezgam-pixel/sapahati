@@ -981,4 +981,119 @@ export async function verifyAdminLoginInSheet(emailInput: string, passwordInput:
   };
 }
 
+// ============================================================
+// SETTINGS SHEET — Email Notifikasi Admin
+// ============================================================
+const SETTINGS_SHEET = 'Settings';
+let memoryAdminNotifEmail = 'ahmadhabibi130301@gmail.com'; // default fallback
 
+export async function getAdminNotificationEmail(): Promise<string> {
+  const config = loadSheetsConfig();
+  if (!config.serviceAccountJson || !config.spreadsheetId) {
+    return memoryAdminNotifEmail;
+  }
+
+  try {
+    const auth = getSheetsAuthClient();
+    const sheets = google.sheets({ version: 'v4', auth: auth as any });
+
+    // Pastikan sheet Settings ada
+    const meta = await sheets.spreadsheets.get({ spreadsheetId: config.spreadsheetId });
+    const sheetNames = (meta.data.sheets || []).map((s: any) => s.properties?.title);
+    if (!sheetNames.includes(SETTINGS_SHEET)) {
+      // Buat sheet Settings jika belum ada
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: config.spreadsheetId,
+        requestBody: {
+          requests: [{ addSheet: { properties: { title: SETTINGS_SHEET } } }],
+        },
+      });
+      // Tulis header dan nilai default
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: config.spreadsheetId,
+        range: `${SETTINGS_SHEET}!A1:B2`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [
+            ['Key', 'Value'],
+            ['adminNotificationEmail', memoryAdminNotifEmail],
+          ],
+        },
+      });
+      return memoryAdminNotifEmail;
+    }
+
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: config.spreadsheetId,
+      range: `${SETTINGS_SHEET}!A2:B100`,
+    });
+
+    const rows = res?.data?.values || [];
+    for (const row of rows) {
+      if (String(row[0] || '').trim() === 'adminNotificationEmail' && row[1]) {
+        const email = String(row[1]).trim();
+        if (email.includes('@')) {
+          memoryAdminNotifEmail = email;
+          return email;
+        }
+      }
+    }
+
+    return memoryAdminNotifEmail;
+  } catch (err) {
+    console.warn('getAdminNotificationEmail error:', err);
+    return memoryAdminNotifEmail;
+  }
+}
+
+export async function updateAdminNotificationEmail(email: string): Promise<void> {
+  const cleanEmail = (email || '').trim();
+  if (!cleanEmail.includes('@')) throw new Error('Format email tidak valid');
+  memoryAdminNotifEmail = cleanEmail;
+
+  const config = loadSheetsConfig();
+  if (!config.serviceAccountJson || !config.spreadsheetId) return;
+
+  try {
+    const auth = getSheetsAuthClient();
+    const sheets = google.sheets({ version: 'v4', auth: auth as any });
+
+    // Pastikan sheet Settings ada
+    const meta = await sheets.spreadsheets.get({ spreadsheetId: config.spreadsheetId });
+    const sheetNames = (meta.data.sheets || []).map((s: any) => s.properties?.title);
+    if (!sheetNames.includes(SETTINGS_SHEET)) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: config.spreadsheetId,
+        requestBody: {
+          requests: [{ addSheet: { properties: { title: SETTINGS_SHEET } } }],
+        },
+      });
+    }
+
+    // Ambil data lama dulu
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: config.spreadsheetId,
+      range: `${SETTINGS_SHEET}!A1:B100`,
+    });
+
+    const rows: any[][] = res?.data?.values || [['Key', 'Value']];
+    let found = false;
+    for (let i = 0; i < rows.length; i++) {
+      if (String(rows[i][0] || '').trim() === 'adminNotificationEmail') {
+        rows[i][1] = cleanEmail;
+        found = true;
+        break;
+      }
+    }
+    if (!found) rows.push(['adminNotificationEmail', cleanEmail]);
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: config.spreadsheetId,
+      range: `${SETTINGS_SHEET}!A1:B${rows.length}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: rows },
+    });
+  } catch (err) {
+    console.warn('updateAdminNotificationEmail error:', err);
+  }
+}

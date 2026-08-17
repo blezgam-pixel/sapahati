@@ -15,6 +15,8 @@ import {
   getAdminUsersFromSheet,
   updateAdminUsersInSheet,
   verifyAdminLoginInSheet,
+  getAdminNotificationEmail,
+  updateAdminNotificationEmail,
 } from '../server/sheetsService.js';
 
 const app = express();
@@ -214,6 +216,29 @@ app.post('/api/sheets/admins', async (req, res) => {
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Gagal menyimpan data Admin Users ke Spreadsheet' });
+  }
+});
+
+// Settings: Email Notifikasi Admin
+app.get('/api/settings/admin-email', async (req, res) => {
+  try {
+    const email = await getAdminNotificationEmail();
+    res.json({ email });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Gagal mengambil email notifikasi admin' });
+  }
+});
+
+app.post('/api/settings/admin-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: 'Format email tidak valid' });
+    }
+    await updateAdminNotificationEmail(email);
+    res.json({ success: true, email });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Gagal menyimpan email notifikasi admin' });
   }
 });
 
@@ -425,4 +450,45 @@ ${prompt}`;
 
 // Vercel akan memanggil "app" ini langsung sebagai handler request.
 // TIDAK ADA app.listen() di sini -- itu yang membedakan dari server.ts biasa.
+// ----------------------------------------------------
+// TELEGRAM NOTIFICATION ENDPOINT
+// ----------------------------------------------------
+app.post('/api/telegram/notify', async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+
+    if (!token || !chatId) {
+      console.warn('[Telegram] Token atau Chat ID belum diatur di .env');
+      return res.status(500).json({ error: 'Telegram belum dikonfigurasi di server' });
+    }
+
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'HTML',
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.description || 'Gagal kirim ke Telegram');
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('[Telegram] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default app;
