@@ -56,6 +56,76 @@ setInterval(() => {
 }, 30 * 60 * 1000);
 
 // ============================================================
+// ⚡ PERFORMA: In-Memory Cache untuk Google Sheets
+// Eliminasi latency Sheets API — user pertama pun dapat data cepat
+// ============================================================
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 menit
+
+interface CacheEntry<T> {
+  data: T;
+  cachedAt: number;
+}
+
+const sheetsCache: {
+  cms: CacheEntry<string[][]> | null;
+  psychologists: CacheEntry<any[]> | null;
+  bookings: CacheEntry<any[]> | null;
+  admins: CacheEntry<any[]> | null;
+} = {
+  cms: null,
+  psychologists: null,
+  bookings: null,
+  admins: null,
+};
+
+function isCacheValid<T>(entry: CacheEntry<T> | null): boolean {
+  return entry !== null && Date.now() - entry.cachedAt < CACHE_TTL_MS;
+}
+
+// Pre-load semua data dari Sheets ke cache (dipanggil saat server start)
+async function preloadSheetsCache() {
+  console.log('[Cache] 🔄 Pre-loading data dari Google Sheets...');
+  try {
+    const [cmsRows, psychologists, bookings, admins] = await Promise.all([
+      getCmsConfigFromSheet().catch(() => null),
+      getPsychologistsFromSheet().catch(() => null),
+      getBookingsFromSheet().catch(() => null),
+      getAdminUsersFromSheet().catch(() => null),
+    ]);
+    const now = Date.now();
+    if (cmsRows) sheetsCache.cms = { data: cmsRows, cachedAt: now };
+    if (psychologists) sheetsCache.psychologists = { data: psychologists, cachedAt: now };
+    if (bookings) sheetsCache.bookings = { data: bookings, cachedAt: now };
+    if (admins) sheetsCache.admins = { data: admins, cachedAt: now };
+    console.log('[Cache] ✅ Pre-load selesai. Data siap untuk semua pengguna.');
+  } catch (err) {
+    console.warn('[Cache] ⚠️ Pre-load gagal (mungkin Sheets belum dikonfigurasi):', err);
+  }
+}
+
+// Refresh cache di background setiap 5 menit
+setInterval(async () => {
+  console.log('[Cache] 🔄 Background refresh cache...');
+  try {
+    const [cmsRows, psychologists, bookings, admins] = await Promise.all([
+      getCmsConfigFromSheet().catch(() => null),
+      getPsychologistsFromSheet().catch(() => null),
+      getBookingsFromSheet().catch(() => null),
+      getAdminUsersFromSheet().catch(() => null),
+    ]);
+    const now = Date.now();
+    if (cmsRows) sheetsCache.cms = { data: cmsRows, cachedAt: now };
+    if (psychologists) sheetsCache.psychologists = { data: psychologists, cachedAt: now };
+    if (bookings) sheetsCache.bookings = { data: bookings, cachedAt: now };
+    if (admins) sheetsCache.admins = { data: admins, cachedAt: now };
+    console.log('[Cache] ✅ Background refresh selesai.');
+  } catch (err) {
+    console.warn('[Cache] ⚠️ Background refresh gagal:', err);
+  }
+}, CACHE_TTL_MS);
+
+
+// ============================================================
 // 🔒 KEAMANAN: Verifikasi Token Firebase (Gratis, pakai REST API)
 // Memastikan request booking berasal dari pengguna yang benar-benar login
 // ============================================================
@@ -117,7 +187,11 @@ app.post('/api/sheets/config', async (req, res) => {
 
 app.get('/api/sheets/bookings', async (req, res) => {
   try {
+    if (isCacheValid(sheetsCache.bookings)) {
+      return res.json({ bookings: sheetsCache.bookings!.data, fromCache: true });
+    }
     const bookings = await getBookingsFromSheet();
+    sheetsCache.bookings = { data: bookings, cachedAt: Date.now() };
     res.json({ bookings });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Gagal mengambil data bookings' });
@@ -131,6 +205,7 @@ app.post('/api/sheets/bookings', async (req, res) => {
       return res.status(400).json({ error: 'Data bookings harus berupa array' });
     }
     await updateBookingsInSheet(bookings);
+    sheetsCache.bookings = { data: bookings, cachedAt: Date.now() }; // Update cache langsung
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Gagal menyimpian data bookings' });
@@ -171,7 +246,11 @@ app.post('/api/sheets/bookings/append', async (req, res) => {
 
 app.get('/api/sheets/psychologists', async (req, res) => {
   try {
+    if (isCacheValid(sheetsCache.psychologists)) {
+      return res.json({ psychologists: sheetsCache.psychologists!.data, fromCache: true });
+    }
     const psychologists = await getPsychologistsFromSheet();
+    sheetsCache.psychologists = { data: psychologists, cachedAt: Date.now() };
     res.json({ psychologists });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Gagal mengambil data psikolog' });
@@ -185,6 +264,7 @@ app.post('/api/sheets/psychologists', async (req, res) => {
       return res.status(400).json({ error: 'Data psychologists harus berupa array' });
     }
     await updatePsychologistsInSheet(psychologists);
+    sheetsCache.psychologists = { data: psychologists, cachedAt: Date.now() }; // Update cache langsung
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Gagal menyimpan data psikolog' });
@@ -193,7 +273,11 @@ app.post('/api/sheets/psychologists', async (req, res) => {
 
 app.get('/api/sheets/cms', async (req, res) => {
   try {
+    if (isCacheValid(sheetsCache.cms)) {
+      return res.json({ rows: sheetsCache.cms!.data, fromCache: true });
+    }
     const rows = await getCmsConfigFromSheet();
+    sheetsCache.cms = { data: rows, cachedAt: Date.now() };
     res.json({ rows });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Gagal mengambil data CMS dari Spreadsheet' });
@@ -207,6 +291,7 @@ app.post('/api/sheets/cms', async (req, res) => {
       return res.status(400).json({ error: 'Data rows harus berupa array' });
     }
     await updateCmsConfigInSheet(rows);
+    sheetsCache.cms = { data: rows, cachedAt: Date.now() }; // Update cache langsung
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Gagal menyimpan data CMS ke Spreadsheet' });
@@ -216,7 +301,11 @@ app.post('/api/sheets/cms', async (req, res) => {
 // Admin Users Endpoints
 app.get('/api/sheets/admins', async (req, res) => {
   try {
+    if (isCacheValid(sheetsCache.admins)) {
+      return res.json({ admins: sheetsCache.admins!.data, fromCache: true });
+    }
     const admins = await getAdminUsersFromSheet();
+    sheetsCache.admins = { data: admins, cachedAt: Date.now() };
     res.json({ admins });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Gagal mengambil data Admin Users dari Spreadsheet' });
@@ -230,6 +319,7 @@ app.post('/api/sheets/admins', async (req, res) => {
       return res.status(400).json({ error: 'Data admins harus berupa array' });
     }
     await updateAdminUsersInSheet(admins);
+    sheetsCache.admins = { data: admins, cachedAt: Date.now() }; // Update cache langsung
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Gagal menyimpan data Admin Users ke Spreadsheet' });
@@ -489,10 +579,12 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  app.listen(PORT, '0.0.0.0', async () => {
     console.log(`Sapahati server running on http://0.0.0.0:${PORT}`);
     // Start Telegram Bot polling service
     startTelegramBot();
+    // Pre-load semua data dari Sheets ke cache saat server start
+    await preloadSheetsCache();
   });
 }
 
