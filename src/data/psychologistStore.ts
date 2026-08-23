@@ -19,6 +19,21 @@ export const INITIAL_BOOKINGS: BookingSession[] = [];
 const PSYCHOLOGISTS_KEY = 'sapahati_psychologists';
 const BOOKINGS_KEY = 'sapahati_bookings';
 
+// ============================================================
+// 🔒 WRITE LOCK: Cegah polling overwrite data yang baru dihapus
+// Setelah operasi delete/write, polling ditunda 30 detik
+// ============================================================
+let lastWriteAt = 0;
+const WRITE_LOCK_MS = 30_000; // 30 detik
+
+function markWriteOperation() {
+  lastWriteAt = Date.now();
+}
+
+function isWithinWriteLock(): boolean {
+  return Date.now() - lastWriteAt < WRITE_LOCK_MS;
+}
+
 export function getPsychologists(): Psychologist[] {
   try {
     const data = localStorage.getItem(PSYCHOLOGISTS_KEY);
@@ -48,7 +63,7 @@ export function savePsychologist(newPsych: Omit<Psychologist, 'id'>): Psychologi
   const updated = [created, ...current];
   localStorage.setItem(PSYCHOLOGISTS_KEY, JSON.stringify(updated));
   notifyListeners();
-  
+  markWriteOperation(); // 🔒 Lock polling
   // Sync to Google Sheets
   pushPsychologistsToSheets(updated);
   return created;
@@ -59,7 +74,7 @@ export function deletePsychologist(psychologistId: string): boolean {
   const updated = current.filter((p) => p.id !== psychologistId);
   localStorage.setItem(PSYCHOLOGISTS_KEY, JSON.stringify(updated));
   notifyListeners();
-
+  markWriteOperation(); // 🔒 Lock polling — cegah data muncul lagi
   // Sync to Google Sheets
   pushPsychologistsToSheets(updated);
   return true;
@@ -72,7 +87,7 @@ export function updatePsychologistSchedules(psychologistId: string, scheduleSlot
     current[idx].scheduleSlots = scheduleSlots;
     localStorage.setItem(PSYCHOLOGISTS_KEY, JSON.stringify(current));
     notifyListeners();
-
+    markWriteOperation(); // 🔒 Lock polling
     // Sync to Google Sheets
     pushPsychologistsToSheets(current);
     return true;
@@ -106,6 +121,7 @@ export async function createBooking(booking: Omit<BookingSession, 'id' | 'status
   const updated = [created, ...current];
   localStorage.setItem(BOOKINGS_KEY, JSON.stringify(updated));
   notifyListeners();
+  markWriteOperation(); // 🔒 Lock polling — cegah booking baru hilang saat sync
 
   const state = getSyncState();
   if (state.status === 'connected' && state.spreadsheetId) {
@@ -138,7 +154,7 @@ export function updateBookingStatus(bookingId: string, status: BookingStatus): b
     current[idx].status = status;
     localStorage.setItem(BOOKINGS_KEY, JSON.stringify(current));
     notifyListeners();
-
+    markWriteOperation(); // 🔒 Lock polling
     // Sync to Google Sheets
     pushBookingsToSheets(current);
     return true;
@@ -151,7 +167,7 @@ export function deleteBooking(bookingId: string): boolean {
   const updated = current.filter((b) => b.id !== bookingId);
   localStorage.setItem(BOOKINGS_KEY, JSON.stringify(updated));
   notifyListeners();
-
+  markWriteOperation(); // 🔒 Lock polling — cegah data muncul lagi setelah hapus
   // Sync to Google Sheets
   pushBookingsToSheets(updated);
   return true;
@@ -160,7 +176,7 @@ export function deleteBooking(bookingId: string): boolean {
 export function clearAllBookings(): void {
   localStorage.setItem(BOOKINGS_KEY, JSON.stringify([]));
   notifyListeners();
-
+  markWriteOperation(); // 🔒 Lock polling
   // Sync to Google Sheets
   pushBookingsToSheets([]);
 }
@@ -172,7 +188,7 @@ export function updatePsychologist(psychologistId: string, updatedFields: Partia
     current[idx] = { ...current[idx], ...updatedFields };
     localStorage.setItem(PSYCHOLOGISTS_KEY, JSON.stringify(current));
     notifyListeners();
-
+    markWriteOperation(); // 🔒 Lock polling
     // Sync to Google Sheets
     pushPsychologistsToSheets(current);
     return true;
@@ -184,7 +200,7 @@ export function resetLocalData(): void {
   localStorage.removeItem(PSYCHOLOGISTS_KEY);
   localStorage.removeItem(BOOKINGS_KEY);
   notifyListeners();
-
+  markWriteOperation(); // 🔒 Lock polling — cegah data balik dari Sheets
   // Sync empty state to Google Sheets if connected
   const state = getSyncState();
   if (state.status === 'connected') {
@@ -198,6 +214,11 @@ export async function syncWithGoogleSheetsNow(isInitialSetup = false): Promise<v
   const state = getSyncState();
   if (state.status !== 'connected' || !state.spreadsheetId) return;
 
+  // 🔒 Jika baru saja ada operasi write/delete, skip polling untuk cegah overwrite
+  if (!isInitialSetup && isWithinWriteLock()) {
+    console.log('[Sync] Polling ditunda — menunggu write operation selesai...');
+    return;
+  }
   try {
     // ⚡ Gunakan batch endpoint: 1 request untuk semua data (lebih cepat di Vercel)
     let remoteBookings: any[] = [];
