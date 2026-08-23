@@ -70,6 +70,22 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', app: 'Sapahati' });
 });
 
+// ⚡ BATCH ENDPOINT: Ambil semua data sekaligus dalam 1 request (paralel)
+// Menggantikan 3 request sequential menjadi 1 request dengan Promise.all
+app.get('/api/sheets/init-data', async (req, res) => {
+  try {
+    const [cmsRows, psychologists, bookings] = await Promise.all([
+      getCmsConfigFromSheet().catch(() => []),
+      getPsychologistsFromSheet().catch(() => []),
+      getBookingsFromSheet().catch(() => []),
+    ]);
+    res.json({ cmsRows, psychologists, bookings });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Gagal mengambil data awal' });
+  }
+});
+
+
 // Google Sheets Service Account Endpoints
 app.get('/api/sheets/status', async (req, res) => {
   try {

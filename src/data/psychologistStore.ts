@@ -199,10 +199,40 @@ export async function syncWithGoogleSheetsNow(isInitialSetup = false): Promise<v
   if (state.status !== 'connected' || !state.spreadsheetId) return;
 
   try {
-    // Fetch remote data from Google Sheets (READ)
-    const remoteBookings = await fetchBookingsFromSheets();
-    const remotePsychologists = await fetchPsychologistsFromSheets();
-    const remoteCmsRows = await fetchCmsConfigFromSheets();
+    // ⚡ Gunakan batch endpoint: 1 request untuk semua data (lebih cepat di Vercel)
+    let remoteBookings: any[] = [];
+    let remotePsychologists: any[] = [];
+    let remoteCmsRows: any[] = [];
+
+    try {
+      const batchRes = await fetch('/api/sheets/init-data');
+      if (batchRes.ok) {
+        const batch = await batchRes.json();
+        remoteBookings = batch.bookings || [];
+        remotePsychologists = batch.psychologists || [];
+        remoteCmsRows = batch.cmsRows || [];
+      } else {
+        // Fallback ke request terpisah jika batch gagal
+        const [b, p, c] = await Promise.all([
+          fetchBookingsFromSheets(),
+          fetchPsychologistsFromSheets(),
+          fetchCmsConfigFromSheets(),
+        ]);
+        remoteBookings = b;
+        remotePsychologists = p;
+        remoteCmsRows = c;
+      }
+    } catch {
+      // Fallback ke request terpisah
+      const [b, p, c] = await Promise.all([
+        fetchBookingsFromSheets(),
+        fetchPsychologistsFromSheets(),
+        fetchCmsConfigFromSheets(),
+      ]);
+      remoteBookings = b;
+      remotePsychologists = p;
+      remoteCmsRows = c;
+    }
 
     const localBookings = getBookings();
     const localPsychologists = getPsychologists();
