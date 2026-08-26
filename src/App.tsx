@@ -32,9 +32,9 @@ export default function App() {
   const cmsConfig = useCmsConfig();
 
   // ── Splash Screen Logic ──────────────────────────────────────────────────────
-  // Show splash on home route only, hide once Google Sheets auth resolves
-  // AND a minimum display time (1.5s) has elapsed.
-  // A hard timeout (6s) ensures splash always disappears even if server is down.
+  // Solusi A: Cek apakah data CMS sudah ada di localStorage (returning visitor)
+  // Jika ya → splash hilang lebih cepat (600ms) karena data sudah siap tampil
+  // Jika tidak → tunggu data dari server dulu (fresh visitor)
   const [isAppReady, setIsAppReady] = useState(false);
   const minDisplayDone = useRef(false);
   const dataLoadDone = useRef(false);
@@ -47,11 +47,21 @@ export default function App() {
 
   // Automatically trigger Google Sheets auth & background data sync on app start
   useEffect(() => {
-    // Minimum display timer (1.5s)
+    // Solusi A: Jika localStorage sudah ada data CMS yang bermakna,
+    // returning visitor langsung dapat data instan — splash cukup animasi sebentar
+    const cachedConfig = getCmsConfig();
+    const hasCachedData = !!(cachedConfig.branding?.brandName?.trim() || cachedConfig.hero?.title?.trim());
+    const minDisplayMs = hasCachedData ? 600 : 1500;
+
+    // Minimum display timer
     const minTimer = setTimeout(() => {
       minDisplayDone.current = true;
+      if (hasCachedData) {
+        // Returning visitor: data dari localStorage sudah tampil, langsung reveal
+        dataLoadDone.current = true;
+      }
       tryReveal();
-    }, 1500);
+    }, minDisplayMs);
 
     // Hard safety timeout (6s) — always dismiss regardless of server state
     const hardTimeout = setTimeout(() => {
@@ -60,6 +70,8 @@ export default function App() {
       setIsAppReady(true);
     }, 6000);
 
+    // Solusi B: initGoogleAuth sekarang juga fetch CMS data sekaligus (paralel)
+    // Data segar dari Sheets akan otomatis update UI via subscription cmsStore
     initGoogleAuth().finally(() => {
       dataLoadDone.current = true;
       tryReveal();

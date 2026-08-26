@@ -1,4 +1,5 @@
 import { BookingSession, Psychologist, BookingStatus } from '../types';
+import { importCmsConfigRows } from '../data/cmsStore';
 
 export interface SyncState {
   spreadsheetId: string | null;
@@ -43,10 +44,16 @@ export function getSyncState(): SyncState {
 export async function initGoogleAuth(): Promise<SyncState> {
   updateSyncState({ status: 'connecting', errorMessage: null });
   try {
-    const res = await fetch('/api/sheets/status');
-    const data = await res.json();
+    // ⚡ Solusi B: Jalankan status check + fetch semua data CMS sekaligus (paralel)
+    // Satu round-trip ke server alih-alih dua request sequential
+    const [statusRes, initRes] = await Promise.allSettled([
+      fetch('/api/sheets/status').then((r) => r.json()),
+      fetch('/api/sheets/init-data').then((r) => r.json()),
+    ]);
 
-    if (data.connected) {
+    // Proses status
+    const data = statusRes.status === 'fulfilled' ? statusRes.value : null;
+    if (data?.connected) {
       updateSyncState({
         status: 'connected',
         spreadsheetId: data.spreadsheetId,
@@ -58,10 +65,19 @@ export async function initGoogleAuth(): Promise<SyncState> {
     } else {
       updateSyncState({
         status: 'disconnected',
-        clientEmail: data.clientEmail || null,
-        spreadsheetId: data.spreadsheetId || null,
-        errorMessage: data.message || null,
+        clientEmail: data?.clientEmail || null,
+        spreadsheetId: data?.spreadsheetId || null,
+        errorMessage: data?.message || null,
       });
+    }
+
+    // ⚡ Solusi A: Simpan CMS ke localStorage sekarang juga
+    // Kunjungan berikutnya akan langsung tampilkan data dari cache tanpa tunggu network
+    if (initRes.status === 'fulfilled') {
+      const initData = initRes.value;
+      if (Array.isArray(initData?.cmsRows) && initData.cmsRows.length > 0) {
+        importCmsConfigRows(initData.cmsRows);
+      }
     }
   } catch (err: any) {
     updateSyncState({
