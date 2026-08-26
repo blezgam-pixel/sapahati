@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { Header } from './components/user/Header';
 import { HeroSection } from './components/user/HeroSection';
 import { FeaturesSection } from './components/user/FeaturesSection';
@@ -26,13 +26,49 @@ import { processImageToTransparentUrl } from './components/common/TransparentIma
 import { APP_IMAGES } from './data/appImages';
 import { getCmsConfig, subscribeCmsConfig, useCmsConfig, CmsConfig } from './data/cmsStore';
 import { initGoogleAuth } from './services/googleSheets';
+import { SplashScreen } from './components/user/SplashScreen';
 
 export default function App() {
   const cmsConfig = useCmsConfig();
 
+  // ── Splash Screen Logic ──────────────────────────────────────────────────────
+  // Show splash on home route only, hide once Google Sheets auth resolves
+  // AND a minimum display time (1.5s) has elapsed.
+  // A hard timeout (6s) ensures splash always disappears even if server is down.
+  const [isAppReady, setIsAppReady] = useState(false);
+  const minDisplayDone = useRef(false);
+  const dataLoadDone = useRef(false);
+
+  const tryReveal = () => {
+    if (minDisplayDone.current && dataLoadDone.current) {
+      setIsAppReady(true);
+    }
+  };
+
   // Automatically trigger Google Sheets auth & background data sync on app start
   useEffect(() => {
-    initGoogleAuth();
+    // Minimum display timer (1.5s)
+    const minTimer = setTimeout(() => {
+      minDisplayDone.current = true;
+      tryReveal();
+    }, 1500);
+
+    // Hard safety timeout (6s) — always dismiss regardless of server state
+    const hardTimeout = setTimeout(() => {
+      minDisplayDone.current = true;
+      dataLoadDone.current = true;
+      setIsAppReady(true);
+    }, 6000);
+
+    initGoogleAuth().finally(() => {
+      dataLoadDone.current = true;
+      tryReveal();
+    });
+
+    return () => {
+      clearTimeout(minTimer);
+      clearTimeout(hardTimeout);
+    };
   }, []);
   // Simple SPA Route State
   const [route, setRoute] = useState<string>(() => {
@@ -288,6 +324,13 @@ export default function App() {
   // ELSE RENDER MAIN PATIENT WEBSITE
   return (
     <div className="min-h-screen bg-[#FAF8FF] text-[#1D123B] flex flex-col font-['Plus_Jakarta_Sans',sans-serif] selection:bg-purple-200 overflow-x-clip w-full">
+
+      {/* Splash Screen — tampil saat pertama buka, hilang otomatis setelah data siap */}
+      <SplashScreen
+        isVisible={!isAppReady}
+        logoUrl={cmsConfig.branding?.logoImage || cmsConfig.branding?.appIcon}
+        brandName={cmsConfig.branding?.brandName}
+      />
       
       {/* Animasi Pesawat Terbang */}
       <FlyingAirplane />
