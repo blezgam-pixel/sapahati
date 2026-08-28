@@ -1,10 +1,14 @@
-﻿{
+{
   "id": "id.sapahati.app",
   "name": "Sapahati",
   "short_name": "Sapahati",
   "description": "Sapa Hati - Peduli, Dengar, Bertumbuh. Platform kesehatan mental yang menghubungkan kamu dengan berbagai layanan untuk mendukung perjalanan memahami diri dan bertumbuh.",
   "start_url": "/",
   "scope": "/",
+  "scope_extensions": [
+    { "origin": "https://sapahati.id" },
+    { "origin": "https://www.sapahati.id" }
+  ],
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
   "orientation": "any",
