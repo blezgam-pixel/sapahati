@@ -2,7 +2,7 @@
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "id.sapahati.app",
-    "sha256_cert_fingerprints": ["8E:50:47:28:FF:8C:B6:E0:1D:4B:5C:D6:8A:5D:A8:69:70:8A:E5:3A:C9:89:F4:D8:24:1B:DA:91:0E:8C:CC:B4"]
+    "package_name": "id.sapahati.www.twa",
+    "sha256_cert_fingerprints": ["37:40:93:79:07:20:9A:C5:D9:A6:67:9C:21:CF:96:B5:D9:73:41:52:65:89:79:1D:AC:0C:16:1C:9B:FC:BB:95"]
   }
 }]
