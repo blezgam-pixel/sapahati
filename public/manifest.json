@@ -6,6 +6,7 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
   "orientation": "any",
   "background_color": "#6C35DE",
   "theme_color": "#6C35DE",
@@ -13,7 +14,29 @@
   "dir": "ltr",
   "categories": ["health", "medical", "lifestyle"],
   "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://www.sapahati.id/manifest.json"
+    }
+  ],
   "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "shortcuts": [
+    {
+      "name": "Curhat AI",
+      "short_name": "Curhat",
+      "description": "Mulai sesi curhat dengan AI",
+      "url": "/curhat-ai",
+      "icons": [{ "src": "/icons/launchericon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Cari Psikolog",
+      "short_name": "Psikolog",
+      "description": "Temukan psikolog terpercaya",
+      "url": "/psikolog",
+      "icons": [{ "src": "/icons/launchericon-96x96.png", "sizes": "96x96" }]
+    }
+  ],
   "screenshots": [
     {
       "src": "/icons/launchericon-512x512.png",
