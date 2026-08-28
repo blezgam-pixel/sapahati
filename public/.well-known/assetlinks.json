@@ -1,9 +1,14 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "id.sapahati.app",
-        "sha256_cert_fingerprints": ["C3:C1:64:D1:DA:E4:68:92:A9:EA:80:C8:57:58:A9:BD:62:4E:7D:E4:6A:09:F2:10:53:1A:32:12:7A:89:36:65"]
-      }
-    }]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "id.sapahati.app",
+      "sha256_cert_fingerprints": [
+        "C3:C1:64:D1:DA:E4:68:92:A9:EA:80:C8:57:58:A9:BD:62:4E:7D:E4:6A:09:F2:10:53:1A:32:12:7A:89:36:65",
+        "5B:D5:A5:38:B8:D2:D2:99:F1:01:07:CD:08:7A:D2:4E:EC:54:72:E7:20:2F:E8:B0:3A:3D:58:04:D9:8F:72:C5"
+      ]
+    }
+  }
+]
 
