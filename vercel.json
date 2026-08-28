@@ -6,7 +6,8 @@
       "source": "/.well-known/assetlinks.json",
       "headers": [
         { "key": "Content-Type", "value": "application/json" },
-        { "key": "Cache-Control", "value": "no-cache" }
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
       ]
     }
   ],
@@ -14,4 +15,4 @@
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/__/auth/(.*)", "destination": "https://sapahati-app.firebaseapp.com/__/auth/$1" }
   ]
-}
+}
