@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /sp-dash-9f3a
+Disallow: /api/
+
+Sitemap: https://www.sapahati.id/sitemap.xml
